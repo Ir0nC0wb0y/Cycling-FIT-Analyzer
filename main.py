@@ -1,7 +1,9 @@
 import argparse
-from fit_reader import load_fit
-from fit_reader import get_available_fields
-from ride import Ride
+from src.fit_reader import load_fit
+from src.fit_reader import get_available_fields
+from src.ride import Ride
+from pathlib import Path
+from src.file_utils import find_input_file
 
 print("Running program")
 
@@ -12,18 +14,22 @@ def main():
     )
 
     parser.add_argument(
-        "filename",
-        help="Path to the FIT file"
-    )
+    "filename",
+    nargs="?",
+    default=None,
+    help="Path to the FIT file"
+)
 
     args = parser.parse_args()
 
+    filename = find_input_file(args.filename)
+
     # print FIT file record headers and units
-    fields = get_available_fields(args.filename)
+    fields = get_available_fields(filename)
     
 
     # Load the FIT file
-    records = load_fit(args.filename)
+    records = load_fit(filename)
     ride = Ride(records)
 
     # print()

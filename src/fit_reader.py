@@ -34,7 +34,7 @@ def load_fit(filename):
     Read a FIT file and return a list of record dictionaries.
     """
 
-    print(f"Loading " + filename + " ...")
+    print(f"Loading {filename} ...")
 
     path = Path(filename)
 

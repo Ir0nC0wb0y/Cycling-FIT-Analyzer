@@ -1,3 +1,4 @@
+from pathlib import Path
 
 FIT_USE_FIELDS = [
     "timestamp",
@@ -7,6 +8,12 @@ FIT_USE_FIELDS = [
     "cadence",
     "enhanced_altitude",
     "temperature"
+]
+
+FIT_DEFAULT_DIRS = [
+    "~/downloads/",
+    "~/storage/downloads/",
+    "data",
 ]
 
 DISPLAY_FIELDS = [
