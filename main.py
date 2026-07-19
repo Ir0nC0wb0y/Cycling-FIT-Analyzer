@@ -44,7 +44,7 @@ def main():
     print(f"Distance [miles]: {distance_converted:.2f}")
     print(f"Moving Average Speed: {distance_converted / moving_time_hrs:.2f}")
     print(f"Avg Active Cadence: {ride.active_cadence_avg:.1f}")
-    print(f"Avg Heart Rate: {ride.heart_rate_avg:.0f}")
+    print(f"Avg Heart Rate: {ride.heart_rate_avg:.1f}")
     print(f"Max Heart Rate: {ride.heart_rate_max}")
 
     # Coach GPT Report:

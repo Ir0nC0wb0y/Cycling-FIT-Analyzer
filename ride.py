@@ -76,11 +76,16 @@ class Ride:
     ## Cadence Metrics ##
     @property
     def active_cadence_avg(self):
+        # Collects all cadences greater than zero
         cadences = [
-            record["cadence"]
+            record.get("cadence", 0)
             for record in self.moving_records()
-            if record["cadence"] > config.THRESHOLD_INACTIVE_CADENCE
+            if record.get("cadence", 0) > config.THRESHOLD_INACTIVE_CADENCE
         ]
+
+        if not cadences:
+            return 0
+
         return sum(cadences) / len(cadences)
     
     ## Heart Rate Metrics ##
