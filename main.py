@@ -47,7 +47,7 @@ def main():
     print(f"Avg Heart Rate: {ride.heart_rate_avg:.1f}")
     print(f"Max Heart Rate: {ride.heart_rate_max}")
 
-    # Coach GPT Report:
+    # Coach Report (v2):
     #   +Moving Time (minutes)
     #   +Moving Time %
     #   +Distance
