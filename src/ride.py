@@ -27,15 +27,15 @@ class Ride:
         
         # Auto Pause Count
         pauses = self.auto_pauses
-        print("Ride had {len(pauses)} auto pauses")
+        print(f"Ride had {len(pauses)} auto pauses")
         
         # Test HR Coverage
         hr_coverage = self.heart_rate_coverage
-        print("Heart Rate Coverage: {hr_coverage:.1%}")
+        print(f"Heart Rate Coverage: {hr_coverage:.1%} of moving time")
         
         # Test Cadence Coverage
         cad_coverage = self.cadence_coverage
-        print("Cadence Coverage: {hr_coverage:.1%}")
+        print(f"Cadence Coverage: {cad_coverage:.1%} of moving time")
 
         
     ## Time Metrics ##
