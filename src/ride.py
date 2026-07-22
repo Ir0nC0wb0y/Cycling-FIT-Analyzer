@@ -123,7 +123,7 @@ class Ride:
         heart_rates = [
             record["heart_rate"]
             for record in self.records
-            if record["heart_rate"] > 0
+            if record.get("heart_rate", 0) > 0
         ]
         return sum(heart_rates) / len(heart_rates)
 
