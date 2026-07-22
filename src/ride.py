@@ -22,7 +22,7 @@ class Ride:
         moving_time = self.duration_moving
         stopped_time = self.duration_stopped
         missing_time = total_time - moving_time - stopped_time
-        if abs(missing_time) > TIME_VALIDATION:
+        if abs(missing_time) > config.TIME_VALIDATION:
             print("Duration issues exist, missing: {missing_time.total_seconds():.3f} seconds")
         
         # Auto Pause Count
@@ -132,7 +132,7 @@ class Ride:
         pauses = []
         for previous, current in zip(self.records, self.records[1:]):
             gap = current["timestamp"] - previous["timestamp"]
-            if gap > AUTO_PAUSE_GAP_SECONDS:
+            if gap > config.AUTO_PAUSE_GAP_SECONDS:
                 pauses.append({"start":previous["timestamp"],
                                "resume":current["timestamp"],
                                "duration":gap,
