@@ -16,7 +16,7 @@ class Ride:
             if self.is_moving(record)
         ]
 
-    def validation(self):
+    def validate(self):
         # Test Time
         total_time = self.duration_elapsed
         moving_time = self.duration_moving
