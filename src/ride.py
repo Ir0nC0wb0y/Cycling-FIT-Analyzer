@@ -38,7 +38,7 @@ class Ride:
             print("Duration issues exist, missing: {missing_time.total_seconds():.3f} seconds")
         
         # Auto Pause Info
-        pauses = self.get_auto_pauses
+        pauses = self.get_auto_pauses()
         if pauses:
             total_pause_time = sum(
                 (pause["duration"] for pause in pauses),
