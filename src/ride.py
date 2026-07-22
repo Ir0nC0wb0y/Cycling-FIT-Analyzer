@@ -16,6 +16,18 @@ class Ride:
             if self.is_moving(record)
         ]
 
+    def get_auto_pauses(self):
+        pauses = []
+        for previous, current in zip(self.records, self.records[1:]):
+            gap = current["timestamp"] - previous["timestamp"]
+            if gap > config.AUTO_PAUSE_GAP_SECONDS:
+                pauses.append({"start":previous["timestamp"],
+                               "resume":current["timestamp"],
+                               "duration":gap,
+                               "distance":previous.get("distance",0),
+                              })
+        return pauses
+
     def validate(self):
         # Test Time
         total_time = self.duration_elapsed
@@ -25,9 +37,25 @@ class Ride:
         if abs(missing_time) > config.TIME_VALIDATION:
             print("Duration issues exist, missing: {missing_time.total_seconds():.3f} seconds")
         
-        # Auto Pause Count
-        pauses = self.auto_pauses
-        print(f"Ride had {len(pauses)} auto pauses")
+        # Auto Pause Info
+        pauses = self.get_auto_pauses
+        if pauses:
+            total_pause_time = sum(
+                (pause["duration"] for pause in pauses),
+                timedelta()
+            )
+
+            longest_pause = max(
+                pause["duration"]
+                for pause in pauses
+            )
+            print(f"Ride had {len(pauses)} auto pauses")
+            print(f"Total pause time: {total_pause_time}")
+            print(f"Longest pause time: {longest_pause}")
+        else:
+            print("No auto pauses detected")
+            
+        
         
         # Test HR Coverage
         hr_coverage = self.heart_rate_coverage
@@ -129,19 +157,6 @@ class Ride:
             if record.get("heart_rate", 0) > 0
         ]
         return sum(heart_rates) / len(heart_rates)
-
-    @cached_property
-    def auto_pauses(self):
-        pauses = []
-        for previous, current in zip(self.records, self.records[1:]):
-            gap = current["timestamp"] - previous["timestamp"]
-            if gap > config.AUTO_PAUSE_GAP_SECONDS:
-                pauses.append({"start":previous["timestamp"],
-                               "resume":current["timestamp"],
-                               "duration":gap,
-                               "distance":previous.get("distance",0),
-                              })
-        return pauses
 
     @cached_property
     def heart_rate_coverage(self):
