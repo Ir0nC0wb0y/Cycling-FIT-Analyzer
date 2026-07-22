@@ -41,4 +41,5 @@ UNITS = {
 THRESHOLD_MOVING_SPEED = 0.5
 THRESHOLD_INACTIVE_CADENCE = 50
 
-TIME_VALIDATION = time_delta(seconds=30)
+TIME_VALIDATION = time_delta(seconds=5)
+AUTO_PAUSE_GAP_SECONDS = time_delta(seconds=2)
