@@ -133,8 +133,8 @@ class Ride:
         for previous, current in zip(self.records, self.records[1:]):
             gap = current["timestamp"] - previous["timestamp"]
             if gap > AUTO_PAUSE_GAP_SECONDS:
-                pauses.append({"start":previous.["timestamp"],
-                               "resume":current.["timestamp"],
+                pauses.append({"start":previous["timestamp"],
+                               "resume":current["timestamp"],
                                "duration":gap,
                                "distance":previous.get("distance",0),
                               }
