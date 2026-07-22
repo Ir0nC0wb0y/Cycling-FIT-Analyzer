@@ -40,6 +40,8 @@ def main():
     # print(f"Stopped Time: {ride.duration_stopped}")
     # print(f"Duration (calc): {ride.duration_moving + ride.duration_stopped}")
 
+    ride.validate()
+
     distance_converted = ride.distance / 1609.34
     moving_time_hrs = ride.duration_moving.total_seconds() / 3600
 
