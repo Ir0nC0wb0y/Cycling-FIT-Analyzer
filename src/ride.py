@@ -39,7 +39,7 @@ class Ride:
 
         
     ## Time Metrics ##
-    @property
+    @cached_property
     def start_time(self):
         for record in self.records:
             if self.is_moving:
@@ -47,7 +47,7 @@ class Ride:
             
         return None
     
-    @property
+    @cached_property
     def end_time(self):
         for record in reversed(self.records):
             if self.is_moving:
@@ -55,11 +55,11 @@ class Ride:
             
         return None
     
-    @property
+    @cached_property
     def duration_elapsed(self):
         return self.end_time - self.start_time
     
-    @property
+    @cached_property
     def duration_moving(self):
         total_time = timedelta(0)
 
@@ -69,7 +69,7 @@ class Ride:
                 total_time += time_delta
         return total_time
     
-    @property
+    @cached_property
     def duration_stopped(self):
         total_time = timedelta(0)
         start = self.start_time
@@ -89,14 +89,14 @@ class Ride:
         return total_time
 
     ## Distance Metrics ##
-    @property
+    @cached_property
     def distance(self):
         for record in reversed(self.records):
             if self.is_moving(record):
                 return record["distance"]
     
     ## Cadence Metrics ##
-    @property
+    @cached_property
     def active_cadence_avg(self):
         # Collects all cadences greater than zero
         cadences = [
@@ -111,14 +111,14 @@ class Ride:
         return sum(cadences) / len(cadences)
     
     ## Heart Rate Metrics ##
-    @property
+    @cached_property
     def heart_rate_max(self):
         return max(
             record["heart_rate"]
             for record in self.moving_records()
             )
     
-    @property
+    @cached_property
     def heart_rate_avg(self):
         heart_rates = [
             record["heart_rate"]
