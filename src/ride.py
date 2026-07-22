@@ -137,7 +137,7 @@ class Ride:
                                "resume":current["timestamp"],
                                "duration":gap,
                                "distance":previous.get("distance",0),
-                              }
+                              })
         return pauses
 
     @cached_property
