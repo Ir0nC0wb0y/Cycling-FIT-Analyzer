@@ -114,8 +114,11 @@ class Ride:
     @cached_property
     def heart_rate_max(self):
         return max(
-            record["heart_rate"]
-            for record in self.moving_records()
+                (
+                    record.get("heart_rate", 0)
+                    for record in self.records
+                ),
+                default=None,
             )
     
     @cached_property
