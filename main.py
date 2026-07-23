@@ -67,6 +67,7 @@ def main():
     #   +Max HR
 
     hr_distribution = distribution.build_distribution(ride.records,"heart_rate",config.HR_BINS)
+    distribution.print_distribution(hr_distribution, title="HR Distribution")
 
     print()
     print("Program End")
