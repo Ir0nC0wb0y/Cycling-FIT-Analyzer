@@ -4,6 +4,8 @@ from src.fit_reader import get_available_fields
 from src.ride import Ride
 from pathlib import Path
 from src.file_utils import find_input_file
+import src.analysis.distribution as distribution
+import config
 
 print("Running program")
 
@@ -63,6 +65,8 @@ def main():
     #   +Average Active Cadence
     #   +Average HR
     #   +Max HR
+
+    hr_distribution = distribution.build_distribution(ride.records,"heart_rate",config.HR_BINS)
 
     print()
     print("Program End")
