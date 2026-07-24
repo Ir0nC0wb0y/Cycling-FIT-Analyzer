@@ -29,6 +29,11 @@ def get_available_fields(filename, display=False):
 
     return fields
 
+def clean_fit_value(value):
+    if value is None:
+        return config.MISSING_DATA_VALUE
+    return value
+
 def load_fit(filename):
     """
     Read a FIT file and return a list of record dictionaries.
@@ -56,10 +61,13 @@ def load_fit(filename):
 
                 for field in frame.fields:
                     if field.name in config.FIT_USE_FIELDS:
-                        record[field.name] = field.value
+                        #record[field.name] = field.value
+                        record[field.name] = clean_fit_value(field.value)
 
                 records.append(record)
 
     print(f"Loaded {len(records)} records.")
 
     return records
+
+

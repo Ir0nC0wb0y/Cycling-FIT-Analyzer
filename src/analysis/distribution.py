@@ -20,7 +20,7 @@ def build_distribution(records, field, bins, moving_only=True):
     for current, next_record in zip(records, records[1:]):
 
         # Skip stationary records if requested
-        if moving_only and current.get("enhanced_speed", 0) <= 0:
+        if moving_only and current.get("enhanced_speed", config.MISSING_DATA_VALUE) <= 0:
             continue
 
         value = current.get(field)

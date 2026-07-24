@@ -1,6 +1,8 @@
 from pathlib import Path
 from datetime import timedelta
 
+MISSING_DATA_VALUE = -1
+
 FIT_USE_FIELDS = [
     "timestamp",
     "distance",

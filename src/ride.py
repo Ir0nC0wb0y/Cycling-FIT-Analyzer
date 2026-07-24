@@ -128,9 +128,9 @@ class Ride:
     def active_cadence_avg(self):
         # Collects all cadences greater than zero
         cadences = [
-            record.get("cadence", 0)
+            record.get("cadence", config.MISSING_DATA_VALUE)
             for record in self.moving_records()
-            if record.get("cadence", 0) > config.THRESHOLD_INACTIVE_CADENCE
+            if record.get("cadence", config.MISSING_DATA_VALUE) > config.THRESHOLD_INACTIVE_CADENCE
         ]
 
         if not cadences:
@@ -143,7 +143,7 @@ class Ride:
     def heart_rate_max(self):
         return max(
                 (
-                    record.get("heart_rate", 0)
+                    record.get("heart_rate", config.MISSING_DATA_VALUE)
                     for record in self.records
                 ),
                 default=None,
@@ -154,7 +154,7 @@ class Ride:
         heart_rates = [
             record["heart_rate"]
             for record in self.records
-            if record.get("heart_rate", 0) > 0
+            if record.get("heart_rate", config.MISSING_DATA_VALUE) > 0
         ]
         return sum(heart_rates) / len(heart_rates)
 
@@ -167,7 +167,7 @@ class Ride:
         valid = [
             record
             for record in moving
-            if record.get("heart_rate", 0) > 0
+            if record.get("heart_rate", config.MISSING_DATA_VALUE) > 0
         ]
         return len(valid) / len(moving)
 
