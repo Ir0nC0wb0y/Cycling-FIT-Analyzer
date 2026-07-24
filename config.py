@@ -62,18 +62,20 @@ HR_BINS = [
 ]
 
 CADENCE_BINS = [
-    {"label": "Below 70",  "min": None, "max": 70},
-    {"label": " Low 70s",   "min":71,    "max":75},
-    {"label": "High 70s",   "min":76,    "max":79},
+    {"label": "Below 70",  "min": None, "max": 69},
+    {"label": " Low 70s",   "min":70,    "max":74},
+    {"label": "High 70s",   "min":75,    "max":79},
     {"label": " Low 80s",   "min":80,    "max":83},
     {"label": " Mid 80s",   "min":84,    "max":86},
     {"label": "High 80s",   "min":87,    "max":89},
     {"label": " Low 90s",   "min":90,    "max":93},
     {"label": " Mid 90s",   "min":94,    "max":96},
     {"label": "High 90s",   "min":97,    "max":99},
-    {"label": "    110s",   "min":100,   "max":109},
-    {"label": "Over 100s",  "min":110,   "max":None},
+    {"label": "    100s",   "min":100,   "max":109},
+    {"label": "Over 110s",  "min":110,   "max":None},
 ]
 
 REPORT_BAR_WIDTH = 20
 REPORT_BAR_CHARACTER = "#"
+REPORT_SHOW_EMPTY_BINS = False
+REPORT_MIN_BIN_PERCENT = .005

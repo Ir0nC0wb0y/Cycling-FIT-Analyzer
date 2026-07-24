@@ -62,7 +62,11 @@ def build_distribution(records, field, bins=None, width=None, moving_only=True):
             width
         )
 
-    histogram = defaultdict(timedelta)
+    #histogram = defaultdict(timedelta)
+    histogram = {
+        bin["label"]: timedelta()
+        for bin in bins
+    }
 
     for current, next_record in zip(records, records[1:]):
 
@@ -125,6 +129,10 @@ def print_distribution(distribution, title="Distribution"):
             if total_time.total_seconds() > 0
             else 0
         )
+
+        if not config.REPORT_SHOW_EMPTY_BINS:
+            if percent < config.REPORT_MIN_BIN_PERCENT:
+                continue
 
         bar_length = (
             int(duration / largest * config.REPORT_BAR_WIDTH)

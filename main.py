@@ -70,6 +70,7 @@ def main():
     distribution.print_distribution(hr_distribution, title="HR Distribution")
 
     cadence_distribution = distribution.build_distribution(ride.records, "cadence", bins=config.CADENCE_BINS)
+    #print(cadence_distribution.keys())
     distribution.print_distribution(cadence_distribution, title="Cadence Distribution")
 
     print()
