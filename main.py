@@ -66,8 +66,11 @@ def main():
     #   +Average HR
     #   +Max HR
 
-    hr_distribution = distribution.build_distribution(ride.records,"heart_rate",config.HR_BINS)
+    hr_distribution = distribution.build_distribution(ride.records,"heart_rate",bins=config.HR_BINS)
     distribution.print_distribution(hr_distribution, title="HR Distribution")
+
+    cadence_distribution = distribution.build_distribution(ride.records, "cadence", bins=config.CADENCE_BINS)
+    distribution.print_distribution(cadence_distribution, title="Cadence Distribution")
 
     print()
     print("Program End")

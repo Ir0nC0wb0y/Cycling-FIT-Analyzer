@@ -3,7 +3,42 @@ from datetime import timedelta
 import config
 
 
-def build_distribution(records, field, bins, moving_only=True):
+def generate_bins(records, field, width):
+    """
+    Generate numeric bins from the data range.
+    """
+
+    values = [
+        record.get(field)
+        for record in records
+        if record.get(field) is not None
+        and record.get(field) >= 0
+    ]
+
+    if not values:
+        return []
+
+    minimum = int(min(values) // width * width)
+    maximum = int(max(values) // width * width + width)
+
+    bins = []
+
+    current = minimum
+
+    while current < maximum:
+        bins.append(
+            {
+                "label": f"{current}-{current + width - 1}",
+                "min": current,
+                "max": current + width - 1,
+            }
+        )
+
+        current += width
+
+    return bins
+
+def build_distribution(records, field, bins=None, width=None, moving_only=True):
     """
     Build a time-weighted distribution for a field.
 
@@ -14,6 +49,18 @@ def build_distribution(records, field, bins, moving_only=True):
             ...
         }
     """
+
+    if bins is None and width is None:
+        raise ValueError(
+            "Either bins or width must be provided."
+        )
+
+    if bins is None:
+        bins = generate_bins(
+            records,
+            field,
+            width
+        )
 
     histogram = defaultdict(timedelta)
 
