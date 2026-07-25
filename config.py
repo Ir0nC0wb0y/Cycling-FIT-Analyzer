@@ -3,15 +3,15 @@ from datetime import timedelta
 
 MISSING_DATA_VALUE = -1
 
-FIT_USE_FIELDS = [
-    "timestamp",
-    "distance",
-    "enhanced_speed",
-    "heart_rate",
-    "cadence",
-    "enhanced_altitude",
-    "temperature"
-]
+#FIT_USE_FIELDS = [
+#    "timestamp",
+#    "distance",
+#    "enhanced_speed",
+#    "heart_rate",
+#    "cadence",
+#    "enhanced_altitude",
+#    "temperature"
+#]
 
 FIT_FIELDS = {
     "time": {
@@ -76,9 +76,9 @@ DISPLAY_UNITS = {
 #HR_ZONES = {
 #    "z1" = 130,
 #    "z2" = 145,
-#     "z3" = 160,
-#     "z4" = 170,
-#     "z5" = 220
+#    "z3" = 160,
+#    "z4" = 170,
+#    "z5" = 220
 # }
 
 THRESHOLD_MOVING_SPEED = 0.5
