@@ -1,19 +1,31 @@
 from collections import defaultdict
 from datetime import timedelta
 import config
+import src.units as unit_converter
 
 
-def generate_bins(records, field, width):
+def generate_bins(ride, field, width):
     """
     Generate numeric bins from the data range.
     """
 
-    values = [
-        record.get(field)
-        for record in records
-        if record.get(field) is not None
-        and record.get(field) >= 0
-    ]
+    #print(f"converting {field} from {ride.units[field]} to {config.FIT_FIELDS[field]["display_unit"]}")
+    values = []
+
+    for record in ride.records:
+
+        value = record.get(field)
+
+        if value is None or value < 0:
+            continue
+
+        value = unit_converter.convert(
+            value,
+            ride.units[field],
+            config.FIT_FIELDS[field]["display_unit"]
+        )
+
+        values.append(value)
 
     if not values:
         return []
@@ -28,9 +40,9 @@ def generate_bins(records, field, width):
     while current < maximum:
         bins.append(
             {
-                "label": f"{current}-{current + width - 1}",
+                "label": f"{current}-{current + width}",
                 "min": current,
-                "max": current + width - 1,
+                "max": current + width,
             }
         )
 
@@ -76,7 +88,7 @@ def build_stddev_bins(mean, stddev, bin_config):
 
     return bins
 
-def build_distribution(records, field, bins, moving_only=True):
+def build_distribution(ride, field, bins, moving_only=True):
     """
     Build a time-weighted distribution for a field.
 
@@ -96,7 +108,7 @@ def build_distribution(records, field, bins, moving_only=True):
         for bin in bins
     }
 
-    for current, next_record in zip(records, records[1:]):
+    for current, next_record in zip(ride.records, ride.records[1:]):
 
         if (
             moving_only
@@ -111,6 +123,12 @@ def build_distribution(records, field, bins, moving_only=True):
 
         if value is None:
             continue
+
+        value = unit_converter.convert(
+            value,
+            ride.units[field],
+            config.FIT_FIELDS[field]["display_unit"]
+        )
 
         dt = (
             next_record["time"]
@@ -137,7 +155,7 @@ def build_distribution(records, field, bins, moving_only=True):
 
     return histogram
 
-def print_distribution(distribution, bins, title="Distribution"):
+def print_distribution(distribution, bins, title="Distribution", show_bounds=True):
     """
     Print a time distribution returned by build_distribution().
     """
@@ -152,15 +170,30 @@ def print_distribution(distribution, bins, title="Distribution"):
     total_time = sum(distribution.values(), timedelta())
     largest = max(distribution.values())
 
+    if show_bounds:
+        bounds_width = max(
+            len(format_bounds(bin["min"], bin["max"]))
+            for bin in bins
+        )
+    else:
+        bounds_width = 0
+
     label_width = max(len(bin["label"]) for bin in bins)
-    bounds_width = max(
-        len(format_bounds(bin["min"], bin["max"]))
-        for bin in bins
-)
+    line_width = (
+        label_width
+        + 2
+        + bounds_width
+        + 2
+        + len("000.0 min")
+        + 2
+        + len("100.0%")
+        + 2
+        + config.REPORT_BAR_WIDTH
+    )
 
     print()
     print(title)
-    print("-" * 80)
+    print("-" * line_width)
 
     for bin in bins:
 
@@ -192,22 +225,41 @@ def print_distribution(distribution, bins, title="Distribution"):
 
         bar = config.REPORT_BAR_CHARACTER * bar_length
 
+        if show_bounds:
+            print(
+                f"{label:<{label_width}}  "
+                f"{bounds:<{bounds_width}}  "
+                f"{duration.total_seconds()/60:6.1f} min  "
+                f"{percent:6.1%}  "
+                f"{bar}"
+            )
+        else:
+            print(
+                f"{label:<{label_width}}  "
+                f"{duration.total_seconds()/60:6.1f} min  "
+                f"{percent:6.1%}  "
+                f"{bar}"
+            )
+
+
+    print("-" * line_width)
+
+    if show_bounds:
         print(
-            f"{label:<{label_width}}  "
-            f"{bounds:<{bounds_width}}  "
-            f"{duration.total_seconds()/60:6.1f} min  "
-            f"{percent:6.1%}  "
-            f"{bar}"
+            f"{'Total':<{label_width}}  "
+            f"{'':<{bounds_width}}  "
+            f"{total_time.total_seconds()/60:6.1f} min  "
+            f"{'100.0%':>6}"
+        )
+    else:
+        print(
+            f"{'Total':<{label_width}}  "
+            f"{total_time.total_seconds()/60:6.1f} min  "
+            f"{'100.0%':>6}"
         )
 
-    print("-" * 80)
-
-    print(
-        f"{'Total':<{label_width}}  "
-        f"{'':<{bounds_width}}  "
-        f"{total_time.total_seconds()/60:6.1f} min  "
-        f"{'100.0%':>6}"
-    )
+    #print(f"Distribution total: {total_time}")
+    
 
 def format_bounds(minimum, maximum):
     """

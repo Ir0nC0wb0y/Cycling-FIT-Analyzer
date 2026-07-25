@@ -4,7 +4,8 @@ from src.fit_reader import get_available_fields
 from src.ride import Ride
 from pathlib import Path
 from src.file_utils import find_input_file
-import src.analysis.distribution as distribution
+import src.reports.distribution_report as distribution_report
+
 import config
 from src import units
 from src.reports import coach_report
@@ -37,15 +38,9 @@ def main():
     # Run reports
     coach_report.print_coach_report(ride)
 
-    # HR Bins in Config
-    hr_bins = config.HR_BINS
-    hr_distribution = distribution.build_distribution(ride.records,"heart_rate", hr_bins)
-    distribution.print_distribution(hr_distribution, hr_bins, title="HR Distribution")
-
-    # Cadence Bins centered around average, using std deviation
-    cadence_bins = distribution.build_stddev_bins(ride.active_cadence_avg, ride.active_cadence_std, config.CADENCE_STDEV_BINS)
-    cadence_distribution = distribution.build_distribution(ride.records, "cadence", cadence_bins)
-    distribution.print_distribution(cadence_distribution, cadence_bins, title="Cadence Consistency")
+    distribution_report.print_distribution_hr(ride)
+    distribution_report.print_distribution_cadence(ride)
+    distribution_report.print_distribution_speed(ride)
 
     print()
     print("Program End")
