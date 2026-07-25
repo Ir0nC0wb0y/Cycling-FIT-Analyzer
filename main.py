@@ -6,6 +6,8 @@ from pathlib import Path
 from src.file_utils import find_input_file
 import src.analysis.distribution as distribution
 import config
+from src import units
+from src.reports import coach_report
 
 print("Running program")
 
@@ -16,62 +18,34 @@ def main():
     )
 
     parser.add_argument(
-    "filename",
-    nargs="?",
-    default=None,
-    help="Path to the FIT file"
-)
+        "filename",
+        nargs="?",
+        default=None,
+        help="Path to the FIT file"
+    )
 
     args = parser.parse_args()
 
-    filename = find_input_file(args.filename)
-
-    # print FIT file record headers and units
-    fields = get_available_fields(filename)
-    
-
     # Load the FIT file
-    records = load_fit(filename)
-    ride = Ride(records)
+    filename = find_input_file(args.filename)
+    records, field_units = load_fit(filename)
 
-    # print()
-    # print(f"Start: {ride.start_time}")
-    # print(f"End: {ride.end_time}")
-    # print(f"Duration: {ride.duration_elapsed}")
-    # print(f"Moving Time [minutes]: {ride.duration_moving}")
-    # print(f"Stopped Time: {ride.duration_stopped}")
-    # print(f"Duration (calc): {ride.duration_moving + ride.duration_stopped}")
-
+    # Create a ride & validate
+    ride = Ride(records, field_units)
     ride.validate()
 
-    distance_converted = ride.distance / 1609.34
-    moving_time_hrs = ride.duration_moving.total_seconds() / 3600
+    # Run reports
+    coach_report.print_coach_report(ride)
 
-    print()
-    print("Coach Report v2")
-    print(f"Moving Time [minutes]: {ride.duration_moving.total_seconds() / 60:.1f}")
-    print(f"Moving Time %: {ride.duration_moving / ride.duration_elapsed:.1%}")
-    print(f"Distance [miles]: {distance_converted:.2f}")
-    print(f"Moving Average Speed: {distance_converted / moving_time_hrs:.2f}")
-    print(f"Avg Active Cadence: {ride.active_cadence_avg:.1f}")
-    print(f"Avg Heart Rate: {ride.heart_rate_avg:.1f}")
-    print(f"Max Heart Rate: {ride.heart_rate_max}")
+    # HR Bins in Config
+    hr_bins = config.HR_BINS
+    hr_distribution = distribution.build_distribution(ride.records,"heart_rate", hr_bins)
+    distribution.print_distribution(hr_distribution, hr_bins, title="HR Distribution")
 
-    # Coach Report (v2):
-    #   +Moving Time (minutes)
-    #   +Moving Time %
-    #   +Distance
-    #   +Moving Average Speed
-    #   +Average Active Cadence
-    #   +Average HR
-    #   +Max HR
-
-    hr_distribution = distribution.build_distribution(ride.records,"heart_rate",bins=config.HR_BINS)
-    distribution.print_distribution(hr_distribution, title="HR Distribution")
-
-    cadence_distribution = distribution.build_distribution(ride.records, "cadence", bins=config.CADENCE_BINS)
-    #print(cadence_distribution.keys())
-    distribution.print_distribution(cadence_distribution, title="Cadence Distribution")
+    # Cadence Bins centered around average, using std deviation
+    cadence_bins = distribution.build_stddev_bins(ride.active_cadence_avg, ride.active_cadence_std, config.CADENCE_STDEV_BINS)
+    cadence_distribution = distribution.build_distribution(ride.records, "cadence", cadence_bins)
+    distribution.print_distribution(cadence_distribution, cadence_bins, title="Cadence Consistency")
 
     print()
     print("Program End")

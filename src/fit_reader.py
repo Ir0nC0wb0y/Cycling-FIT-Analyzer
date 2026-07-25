@@ -47,6 +47,12 @@ def load_fit(filename):
         raise FileNotFoundError(f"Could not find '{filename}'")
 
     records = []
+    units = {}
+
+    fit_field_map = {
+        definition["fit_field"]: name
+        for name, definition in config.FIT_FIELDS.items()
+    }
 
     with fitdecode.FitReader(path) as fit:
 
@@ -56,18 +62,25 @@ def load_fit(filename):
                 isinstance(frame, fitdecode.FitDataMessage)
                 and frame.name == "record"
             ):
-            
+
                 record = {}
 
                 for field in frame.fields:
-                    if field.name in config.FIT_USE_FIELDS:
-                        #record[field.name] = field.value
-                        record[field.name] = clean_fit_value(field.value)
+
+                    if field.name in fit_field_map:
+
+                        name = fit_field_map[field.name]
+
+                        record[name] = clean_fit_value(
+                            field.value
+                        )
+
+                        units[name] = field.units
 
                 records.append(record)
 
     print(f"Loaded {len(records)} records.")
 
-    return records
+    return records, units
 
 

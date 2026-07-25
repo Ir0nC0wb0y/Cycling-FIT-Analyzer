@@ -1,14 +1,33 @@
 import config
 from datetime import timedelta
 from functools import cached_property
+import statistics
+from src import units
 
 class Ride:
 
-    def __init__(self, records):
+    def __init__(self, records, field_units):
         self.records = records
+        self.units = field_units
+
+    def get_unit(self, field):
+        return self.field_units.get(field)
+
+    def get_display_unit(self, field):
+        definition = config.FIT_FIELDS.get(field)
+
+        if definition is None:
+            return None
+
+        return definition["display_unit"]
+
+    def display_value(self, field, value):
+        definition = config.FIT_FIELDS[field]
+
+        return units.convert(value, self.units[field.lower()], definition["display_unit"])
 
     def is_moving(self, record):
-        return record["enhanced_speed"] > config.THRESHOLD_MOVING_SPEED
+        return record["speed"] > config.THRESHOLD_MOVING_SPEED
     
     def moving_records(self):
         return [
@@ -19,10 +38,10 @@ class Ride:
     def get_auto_pauses(self):
         pauses = []
         for previous, current in zip(self.records, self.records[1:]):
-            gap = current["timestamp"] - previous["timestamp"]
+            gap = current["time"] - previous["time"]
             if gap > config.AUTO_PAUSE_GAP_SECONDS:
-                pauses.append({"start":previous["timestamp"],
-                               "resume":current["timestamp"],
+                pauses.append({"start":previous["time"],
+                               "resume":current["time"],
                                "duration":gap,
                                "distance":previous.get("distance",0),
                               })
@@ -71,7 +90,7 @@ class Ride:
     def start_time(self):
         for record in self.records:
             if self.is_moving:
-                return record["timestamp"]
+                return record["time"]
             
         return None
     
@@ -79,7 +98,7 @@ class Ride:
     def end_time(self):
         for record in reversed(self.records):
             if self.is_moving:
-                return record["timestamp"]
+                return record["time"]
             
         return None
     
@@ -93,7 +112,7 @@ class Ride:
 
         for current, next_record in zip(self.records, self.records[1:]):
             if self.is_moving(current):
-                time_delta = next_record["timestamp"] - current["timestamp"]
+                time_delta = next_record["time"] - current["time"]
                 total_time += time_delta
         return total_time
     
@@ -105,14 +124,14 @@ class Ride:
 
         for current, next_record in zip(self.records, self.records[1:]):
             # Ignore anything before start or after end
-            if current["timestamp"] < start:
+            if current["time"] < start:
                 continue
 
-            if current["timestamp"] >= end:
+            if current["time"] >= end:
                 continue
 
             if not self.is_moving(current):
-                time_delta = next_record["timestamp"] - current["timestamp"]
+                time_delta = next_record["time"] - current["time"]
                 total_time += time_delta
         return total_time
 
@@ -122,21 +141,42 @@ class Ride:
         for record in reversed(self.records):
             if self.is_moving(record):
                 return record["distance"]
+
+    @cached_property
+    def speed_avg(self):
+        return (self.distance / self.duration_moving.total_seconds())
     
     ## Cadence Metrics ##
     @cached_property
+    def active_cadence_values(self):
+        return [
+            record.get("cadence", -1)
+            for record in self.moving_records()
+            if record.get("cadence", -1) > config.THRESHOLD_INACTIVE_CADENCE
+        ]
+    
+    @cached_property
     def active_cadence_avg(self):
         # Collects all cadences greater than zero
-        cadences = [
-            record.get("cadence", config.MISSING_DATA_VALUE)
-            for record in self.moving_records()
-            if record.get("cadence", config.MISSING_DATA_VALUE) > config.THRESHOLD_INACTIVE_CADENCE
-        ]
+        values = self.active_cadence_values
 
-        if not cadences:
+        if not values:
             return 0
 
-        return sum(cadences) / len(cadences)
+        return sum(values) / len(values)
+
+    @cached_property
+    def active_cadence_std(self):
+        """
+        Standard deviation of active cadence.
+        """
+
+        values = self.active_cadence_values
+
+        if len(values) < 2:
+            return 0.0
+
+        return statistics.stdev(values)
     
     ## Heart Rate Metrics ##
     @cached_property

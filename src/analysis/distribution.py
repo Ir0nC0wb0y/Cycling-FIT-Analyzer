@@ -38,31 +38,59 @@ def generate_bins(records, field, width):
 
     return bins
 
-def build_distribution(records, field, bins=None, width=None, moving_only=True):
+def build_stddev_bins(mean, stddev, bin_config):
+    """
+    Convert standard deviation bin definitions into value bins.
+
+    Input:
+        min/max are standard deviation multipliers.
+
+    Example:
+        -1.0 means mean - 1σ
+         2.0 means mean + 2σ
+    """
+
+    bins = []
+
+    for bin in bin_config:
+
+        minimum = (
+            None
+            if bin["min"] is None
+            else mean + (bin["min"] * stddev)
+        )
+
+        maximum = (
+            None
+            if bin["max"] is None
+            else mean + (bin["max"] * stddev)
+        )
+
+        bins.append(
+            {
+                "label": bin["label"],
+                "min": minimum,
+                "max": maximum,
+            }
+        )
+
+    return bins
+
+def build_distribution(records, field, bins, moving_only=True):
     """
     Build a time-weighted distribution for a field.
 
-    Returns:
-        {
-            "120-129": timedelta(...),
-            "130-139": timedelta(...),
-            ...
-        }
+    Parameters
+    ----------
+    bins : list[dict]
+        List of bin definitions.
+
+    Returns
+    -------
+    dict
+        label -> timedelta
     """
 
-    if bins is None and width is None:
-        raise ValueError(
-            "Either bins or width must be provided."
-        )
-
-    if bins is None:
-        bins = generate_bins(
-            records,
-            field,
-            width
-        )
-
-    #histogram = defaultdict(timedelta)
     histogram = {
         bin["label"]: timedelta()
         for bin in bins
@@ -70,8 +98,13 @@ def build_distribution(records, field, bins=None, width=None, moving_only=True):
 
     for current, next_record in zip(records, records[1:]):
 
-        # Skip stationary records if requested
-        if moving_only and current.get("enhanced_speed", config.MISSING_DATA_VALUE) <= 0:
+        if (
+            moving_only
+            and current.get(
+                "speed",
+                config.MISSING_DATA_VALUE,
+            ) <= 0
+        ):
             continue
 
         value = current.get(field)
@@ -79,11 +112,12 @@ def build_distribution(records, field, bins=None, width=None, moving_only=True):
         if value is None:
             continue
 
-        dt = next_record["timestamp"] - current["timestamp"]
+        dt = (
+            next_record["time"]
+            - current["time"]
+        )
 
         for bin in bins:
-
-            label = bin["label"]
 
             minimum = (
                 float("-inf")
@@ -98,12 +132,12 @@ def build_distribution(records, field, bins=None, width=None, moving_only=True):
             )
 
             if minimum <= value <= maximum:
-                histogram[label] += dt
+                histogram[bin["label"]] += dt
                 break
 
-    return dict(histogram)
+    return histogram
 
-def print_distribution(distribution, title="Distribution"):
+def print_distribution(distribution, bins, title="Distribution"):
     """
     Print a time distribution returned by build_distribution().
     """
@@ -118,11 +152,25 @@ def print_distribution(distribution, title="Distribution"):
     total_time = sum(distribution.values(), timedelta())
     largest = max(distribution.values())
 
+    label_width = max(len(bin["label"]) for bin in bins)
+    bounds_width = max(
+        len(format_bounds(bin["min"], bin["max"]))
+        for bin in bins
+)
+
     print()
     print(title)
-    print("-" * 60)
+    print("-" * 80)
 
-    for label, duration in distribution.items():
+    for bin in bins:
+
+        label = bin["label"]
+        bounds = format_bounds(
+            bin["min"],
+            bin["max"]
+        )
+
+        duration = distribution[label]
 
         percent = (
             duration / total_time
@@ -130,9 +178,11 @@ def print_distribution(distribution, title="Distribution"):
             else 0
         )
 
-        if not config.REPORT_SHOW_EMPTY_BINS:
-            if percent < config.REPORT_MIN_BIN_PERCENT:
-                continue
+        if (
+            not config.REPORT_SHOW_EMPTY_BINS
+            and percent < config.REPORT_MIN_BIN_PERCENT
+        ):
+            continue
 
         bar_length = (
             int(duration / largest * config.REPORT_BAR_WIDTH)
@@ -143,15 +193,31 @@ def print_distribution(distribution, title="Distribution"):
         bar = config.REPORT_BAR_CHARACTER * bar_length
 
         print(
-            f"{label:<12}"
+            f"{label:<{label_width}}  "
+            f"{bounds:<{bounds_width}}  "
             f"{duration.total_seconds()/60:6.1f} min  "
             f"{percent:6.1%}  "
             f"{bar}"
         )
 
-    print("-" * 60)
+    print("-" * 80)
+
     print(
-        f"{'Total':<12}"
+        f"{'Total':<{label_width}}  "
+        f"{'':<{bounds_width}}  "
         f"{total_time.total_seconds()/60:6.1f} min  "
         f"{'100.0%':>6}"
     )
+
+def format_bounds(minimum, maximum):
+    """
+    Format bounds for display.
+    """
+
+    if minimum is None:
+        return f"< {maximum:.1f}"
+
+    if maximum is None:
+        return f"> {minimum:.1f}"
+
+    return f"{minimum:.1f}-{maximum:.1f}"

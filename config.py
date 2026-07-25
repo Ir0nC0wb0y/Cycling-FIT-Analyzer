@@ -13,24 +13,64 @@ FIT_USE_FIELDS = [
     "temperature"
 ]
 
+FIT_FIELDS = {
+    "time": {
+        "fit_field": "timestamp",
+        "display_unit": None,
+    },
+    "distance": {
+        "fit_field": "distance",
+        "display_unit": "mi",
+    },
+    "speed": {
+        "fit_field": "enhanced_speed",
+        "display_unit": "mph",
+    },
+    "heart_rate": {
+        "fit_field": "heart_rate",
+        "display_unit": "bpm",
+    },
+    "cadence": {
+        "fit_field": "cadence",
+        "display_unit": "rpm",
+    },
+    "altitude": {
+        "fit_field": "enhanced_altitude",
+        "display_unit": "ft",
+    },
+    "temperature": {
+        "fit_field": "temperature",
+        "display_unit": "F",
+    },
+}
+
 FIT_DEFAULT_DIRS = [
     "~/downloads/",
     "~/storage/downloads/",
     "data",
 ]
 
-DISPLAY_FIELDS = [
-    "timestamp",
-    "distance",
-    "heart_rate",
-    "cadence",
-]
+#DISPLAY_FIELDS = [
+#    "timestamp",
+#    "distance",
+#    "heart_rate",
+#    "cadence",
+#]
 
-UNITS = {
-    "unit_distance": "mile",
-    "unit_speed":    "mph",
-    "unit_temperature": "F",
-    "unit_altitude": "feet"
+#UNITS = {
+#    "unit_distance": "mile",
+#    "unit_speed":    "mph",
+#    "unit_temperature": "F",
+#    "unit_altitude": "feet"
+#}
+
+DISPLAY_UNITS = {
+    "distance": "mi",
+    "speed": "mph",
+    "altitude": "ft",
+    "temperature": "F",
+    "cadence": "rpm",
+    "heart_rate": "bpm",
 }
 
 #HR_ZONES = {
@@ -61,18 +101,15 @@ HR_BINS = [
     {"label": "Z5+",      "min":194,   "max":None},
 ]
 
-CADENCE_BINS = [
-    {"label": "Below 70",   "min": None, "max": 69},
-    {"label": "Low 70s",    "min":70,    "max":74},
-    {"label": "High 70s",   "min":75,    "max":79},
-    {"label": "Low 80s",    "min":80,    "max":83},
-    {"label": "Mid 80s",    "min":84,    "max":86},
-    {"label": "High 80s",   "min":87,    "max":89},
-    {"label": "Low 90s",    "min":90,    "max":93},
-    {"label": "Mid 90s",    "min":94,    "max":96},
-    {"label": "High 90s",   "min":97,    "max":99},
-    {"label": "100s",       "min":100,   "max":109},
-    {"label": "Over 110s",  "min":110,   "max":None},
+CADENCE_STDEV_BINS = [
+    {"label": "Low Outlier",       "min": None,  "max": -2.0},
+    {"label": "Moderately Low",    "min": -2.0,  "max": -1.0},
+    {"label": "Slightly Low",      "min": -1.0,  "max": -0.5},
+    {"label": "Core Low",          "min": -0.5, "max": 0},
+    {"label": "Core High",         "min": 0,   "max": 0.5},
+    {"label": "Slightly High",     "min": 0.5,  "max": 1.0},
+    {"label": "Moderately High",   "min": 1.0,   "max": 2.0},
+    {"label": "High Outlier",      "min": 2.0,   "max": None},
 ]
 
 REPORT_BAR_WIDTH = 20
