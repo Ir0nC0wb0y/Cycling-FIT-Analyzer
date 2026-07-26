@@ -125,22 +125,21 @@ def build_effort_profile(ride):
         entry = profile[zone]
 
 
-        entry["time"] += dt
-
+        dt_seconds = dt.total_seconds()
 
         if hr is not None:
-            entry["hr_sum"] += hr
+            entry["hr_sum"] += hr * dt_seconds
 
         if cadence is not None:
-            entry["cadence_sum"] += cadence
+            entry["cadence_sum"] += cadence * dt_seconds
 
         if grade is not None:
-            entry["grade_sum"] += grade
+            entry["grade_sum"] += grade * dt_seconds
 
         if speed is not None:
-            entry["speed_sum"] += speed
+            entry["speed_sum"] += speed * dt_seconds
 
-
+        entry["time"] += dt
         entry["samples"] += 1
 
 
@@ -151,20 +150,22 @@ def build_effort_profile(ride):
 
         if samples:
 
+            total_seconds = entry["time"].total_seconds()
+
             entry["avg_hr"] = (
-                entry["hr_sum"] / samples
+                entry["hr_sum"] / total_seconds
             )
 
             entry["avg_cadence"] = (
-                entry["cadence_sum"] / samples
+                entry["cadence_sum"] / total_seconds
             )
 
             entry["avg_grade"] = (
-                entry["grade_sum"] / samples
+                entry["grade_sum"] / total_seconds
             )
 
             entry["avg_speed"] = (
-                entry["speed_sum"] / samples
+                entry["speed_sum"] / total_seconds
             )
 
         else:
@@ -195,10 +196,19 @@ def print_effort_profile(profile):
         timedelta()
     )
 
+    line_width = (
+        zone_width
+        + time_width
+        + percent_width
+        + speed_width
+        + hr_width
+        + cad_width
+        + grade_width
+    )
 
     print()
     print("Effort Analysis")
-    print("-" * 70)
+    print("-" * line_width)
 
     print(
         f"{'Zone':<{zone_width}}"
@@ -208,16 +218,6 @@ def print_effort_profile(profile):
         f"{'Avg HR':>{hr_width}}"
         f"{'Avg Cad':>{cad_width}}"
         f"{'Grade':>{grade_width}}"
-    )
-
-    line_width = (
-        zone_width
-        + time_width
-        + percent_width
-        + speed_width
-        + hr_width
-        + cad_width
-        + grade_width
     )
 
     print("-" * line_width)
