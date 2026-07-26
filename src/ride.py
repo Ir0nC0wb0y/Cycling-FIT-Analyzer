@@ -9,6 +9,7 @@ class Ride:
     def __init__(self, records, field_units):
         self.records = records
         self.units = field_units
+        self.calculate_grade()
 
     def get_unit(self, field):
         return self.field_units.get(field)
@@ -223,3 +224,56 @@ class Ride:
             if record.get("cadence", 0) > 0
         ]
         return len(valid) / len(moving)
+
+    def calculate_grade(self):
+        """
+        Calculate rolling grade for each record.
+
+        Grade = elevation change / distance change * 100
+        """
+
+        for index, current in enumerate(self.records):
+
+            target_distance = (
+                current["distance"]
+                + config.GRADE_LOOKAHEAD_DISTANCE
+            )
+
+            future_record = None
+
+            for candidate in self.records[index + 1:]:
+                if candidate["distance"] >= target_distance:
+                    future_record = candidate
+                    break
+
+            if future_record is None:
+                current["grade"] = None
+                continue
+
+            altitude = current.get("altitude")
+            future_altitude = future_record.get("altitude")
+
+            distance = current.get("distance")
+            future_distance = future_record.get("distance")
+
+            if (
+                altitude is None
+                or future_altitude is None
+                or distance is None
+                or future_distance is None
+            ):
+                current["grade"] = None
+                continue
+
+            distance_change = future_distance - distance
+            elevation_change = future_altitude - altitude
+
+            if distance_change > 0:
+                current["grade"] = (
+                    elevation_change
+                    /
+                    distance_change
+                    * 100
+                )
+            else:
+                current["grade"] = None
