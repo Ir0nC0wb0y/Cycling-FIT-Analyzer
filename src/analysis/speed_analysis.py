@@ -56,15 +56,15 @@ def build_speed_profile(ride, bins):
             - current["time"]
         )
 
-        elevation_change = (
-            next_record["altitude"]
-            - current["altitude"]
-        )
+        #elevation_change = (
+        #    next_record["altitude"]
+        #    - current["altitude"]
+        #)
 
-        distance_change = (
-            next_record["distance"]
-            - current["distance"]
-        )
+        #distance_change = (
+        #    next_record["distance"]
+        #    - current["distance"]
+        #)
 
         for bin in bins:
 
