@@ -2,14 +2,17 @@ import config
 from datetime import timedelta
 from functools import cached_property
 import statistics
-from src import units
+from src import units as unit_converter
+from src.performance_logger import PerformanceLogger
 
 class Ride:
 
     def __init__(self, records, field_units):
         self.records = records
         self.units = field_units
+        self.performance = PerformanceLogger()
         self.calculate_grade()
+        
 
     def get_unit(self, field):
         return self.field_units.get(field)
@@ -22,10 +25,10 @@ class Ride:
 
         return definition["display_unit"]
 
-    def display_value(self, field, value):
-        definition = config.FIT_FIELDS[field]
-
-        return units.convert(value, self.units[field.lower()], definition["display_unit"])
+    #def display_value(self, field, value):
+    #    definition = config.FIT_FIELDS[field]
+    #
+    #    return units.convert(value, self.units[field.lower()], definition["display_unit"])
 
     def is_moving(self, record):
         return record["speed"] > config.THRESHOLD_MOVING_SPEED
@@ -227,53 +230,121 @@ class Ride:
 
     def calculate_grade(self):
         """
-        Calculate rolling grade for each record.
+        Calculate grade using a centered linear regression.
 
-        Grade = elevation change / distance change * 100
+        Grade is estimated by fitting a straight line to the
+        altitude profile over a window centered on the current
+        record.
         """
 
-        for index, current in enumerate(self.records):
+        self.performance.tic("Grade")
 
-            target_distance = (
-                current["distance"]
-                + config.GRADE_LOOKAHEAD_DISTANCE
-            )
+        half_window = config.GRADE_WINDOW_DISTANCE / 2
 
-            future_record = None
+        # Sliding window implementation.
+        #
+        # 'left' and 'right' only move forward through the ride.
+        # This avoids searching the entire record list for every
+        # center point, reducing complexity from O(n²) to O(n).
 
-            for candidate in self.records[index + 1:]:
-                if candidate["distance"] >= target_distance:
-                    future_record = candidate
-                    break
+        left = 0
+        right = 0
 
-            if future_record is None:
+        for center in range(len(self.records)):
+
+            current = self.records[center]
+
+            
+            center_distance = current.get("distance")
+
+            if center_distance is None:
                 current["grade"] = None
                 continue
 
-            altitude = current.get("altitude")
-            future_altitude = future_record.get("altitude")
+            start_distance = center_distance - half_window
+            end_distance = center_distance + half_window
 
-            distance = current.get("distance")
-            future_distance = future_record.get("distance")
-
-            if (
-                altitude is None
-                or future_altitude is None
-                or distance is None
-                or future_distance is None
+            #
+            # Advance the left edge of the window
+            #
+            while (
+                left < center
+                and self.records[left]["distance"] < start_distance
             ):
+                left += 1
+
+            #
+            # Advance the right edge of the window
+            #
+            while (
+                right + 1 < len(self.records)
+                and self.records[right + 1]["distance"] <= end_distance
+            ):
+                right += 1
+
+            #
+            # Build regression arrays
+            #
+            x = []
+            y = []
+
+            for i in range(left, right + 1):
+
+                record = self.records[i]
+
+                altitude = record.get("altitude")
+
+                if altitude is None:
+                    continue
+
+                x.append(record["distance"])
+                y.append(altitude)
+
+            # Need at least 3 points to perform a regression
+            if len(x) < 3:
                 current["grade"] = None
                 continue
 
-            distance_change = future_distance - distance
-            elevation_change = future_altitude - altitude
+            x_mean = sum(x) / len(x)
+            y_mean = sum(y) / len(y)
 
-            if distance_change > 0:
-                current["grade"] = (
-                    elevation_change
-                    /
-                    distance_change
-                    * 100
-                )
-            else:
+            numerator = 0.0
+            denominator = 0.0
+
+            for xi, yi in zip(x, y):
+
+                dx = xi - x_mean
+
+                numerator += dx * (yi - y_mean)
+                denominator += dx * dx
+
+            if denominator == 0:
                 current["grade"] = None
+                continue
+
+            slope = numerator / denominator
+
+            # Convert rise/run to percent grade
+            current["grade"] = slope * 100
+
+        self.performance.toc("Grade")
+
+    def get(self, record, field, unit=None):
+        value = record.get(field)
+
+        if value is None:
+            return None
+
+        if field not in self.units:
+            return value
+
+        source = self.units[field]
+
+        if unit is None:
+            unit = config.FIT_FIELDS[field]["display_unit"]
+
+        return unit_converter.convert(
+            value,
+            source,
+            unit,
+        )
