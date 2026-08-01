@@ -38,7 +38,7 @@ def main():
     # Create a ride & validate
     ride = Ride(records, field_units)
     ride.validate()
-    
+
 
     # Run reports
     coach_report.print_coach_report(ride)
@@ -54,8 +54,8 @@ def main():
     speed_profile = speed_analysis.build_speed_profile(ride, speed_bins)
     speed_analysis.print_speed_profile(speed_profile, speed_bins)
 
-    effort_profile = effort_analysis.build_effort_profile(ride)
-    effort_analysis.print_effort_profile(effort_profile)
+    #effort_profile = effort_analysis.build_effort_profile(ride)
+    #effort_analysis.print_effort_profile(effort_profile)
 
     print()
     print("Program End")
