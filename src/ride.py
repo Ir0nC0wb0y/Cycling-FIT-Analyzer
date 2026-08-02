@@ -28,8 +28,6 @@ class Ride:
 
     def display_value(self, field, value):
         definition = config.FIT_FIELDS[field]
-        print(f"value: {value}")
-        print(f"field: {field}")
         return unit_converter.convert(value, self.units[field.lower()], definition["display_unit"])
 
     def is_moving(self, record):
