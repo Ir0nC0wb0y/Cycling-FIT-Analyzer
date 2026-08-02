@@ -39,12 +39,8 @@ def main():
     # Create a ride & validate
     ride = Ride(records, field_units)
     ride.validate()
-    print(ride.units)
-    print(ride.list_parameters())
-    
-
-    #ride.get("distance")
-    #print(ride.get("temp_avg"))
+    #print(ride.units)
+    #print(ride.list_parameters())
 
     # Run reports
     coach_report.print_coach_report(ride)
