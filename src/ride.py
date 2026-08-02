@@ -25,10 +25,10 @@ class Ride:
 
         return definition["display_unit"]
 
-    #def display_value(self, field, value):
-    #    definition = config.FIT_FIELDS[field]
-    #
-    #    return units.convert(value, self.units[field.lower()], definition["display_unit"])
+    def display_value(self, field, value):
+        definition = config.FIT_FIELDS[field]
+    
+        return units.convert(value, self.units[field.lower()], definition["display_unit"])
 
     def is_moving(self, record):
         return record["speed"] > config.THRESHOLD_MOVING_SPEED
