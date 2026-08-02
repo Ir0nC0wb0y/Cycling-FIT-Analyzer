@@ -4,6 +4,7 @@ from functools import cached_property
 import statistics
 from src import units as unit_converter
 from src.performance_logger import PerformanceLogger
+from src.quantity import Quantity
 
 class Ride:
 
@@ -25,10 +26,11 @@ class Ride:
 
         return definition["display_unit"]
 
-    #def display_value(self, field, value):
-    #    definition = config.FIT_FIELDS[field]
-    #
-    #    return units.convert(value, self.units[field.lower()], definition["display_unit"])
+    def display_value(self, field, value):
+        definition = config.FIT_FIELDS[field]
+        print(f"value: {value}")
+        print(f"field: {field}")
+        return unit_converter.convert(value, self.units[field.lower()], definition["display_unit"])
 
     def is_moving(self, record):
         return record["speed"] > config.THRESHOLD_MOVING_SPEED
@@ -53,9 +55,9 @@ class Ride:
 
     def validate(self):
         # Test Time
-        total_time = self.duration_elapsed
-        moving_time = self.duration_moving
-        stopped_time = self.duration_stopped
+        total_time = self.duration_elapsed.value
+        moving_time = self.duration_moving.value
+        stopped_time = self.duration_stopped.value
         missing_time = total_time - moving_time - stopped_time
         if abs(missing_time) > config.TIME_VALIDATION:
             print("Duration issues exist, missing: {missing_time.total_seconds():.3f} seconds")
@@ -82,11 +84,11 @@ class Ride:
         
         # Test HR Coverage
         hr_coverage = self.heart_rate_coverage
-        print(f"Heart Rate Coverage: {hr_coverage:.1%} of moving time")
+        print(f"Heart Rate Coverage: {hr_coverage.value:.1%} of moving time")
         
         # Test Cadence Coverage
         cad_coverage = self.cadence_coverage
-        print(f"Cadence Coverage: {cad_coverage:.1%} of moving time")
+        print(f"Cadence Coverage: {cad_coverage.value:.1%} of moving time")
 
         
     ## Time Metrics ##
@@ -94,21 +96,28 @@ class Ride:
     def start_time(self):
         for record in self.records:
             if self.is_moving:
-                return record["time"]
-            
+                return Quantity(
+                    value=record["time"],
+                    unit="timestamp",
+                )
         return None
     
     @cached_property
     def end_time(self):
         for record in reversed(self.records):
             if self.is_moving:
-                return record["time"]
-            
+                return Quantity(
+                    value=record["time"],
+                    unit="timestamp",
+                )
         return None
     
     @cached_property
     def duration_elapsed(self):
-        return self.end_time - self.start_time
+        return Quantity(
+            value=self.end_time.value - self.start_time.value,
+            unit="duration",
+        )
     
     @cached_property
     def duration_moving(self):
@@ -118,13 +127,16 @@ class Ride:
             if self.is_moving(current):
                 time_delta = next_record["time"] - current["time"]
                 total_time += time_delta
-        return total_time
+        return Quantity(
+            value=total_time,
+            unit="duration",
+        )
     
     @cached_property
     def duration_stopped(self):
         total_time = timedelta(0)
-        start = self.start_time
-        end = self.end_time
+        start = self.start_time.value
+        end = self.end_time.value
 
         for current, next_record in zip(self.records, self.records[1:]):
             # Ignore anything before start or after end
@@ -137,22 +149,33 @@ class Ride:
             if not self.is_moving(current):
                 time_delta = next_record["time"] - current["time"]
                 total_time += time_delta
-        return total_time
+        return Quantity(
+            value=total_time,
+            unit="duration",
+        )
 
     ## Distance Metrics ##
     @cached_property
-    def distance(self):
+    def distance_total(self):
         for record in reversed(self.records):
             if self.is_moving(record):
-                return record["distance"]
+                return Quantity(
+                    value=record["distance"],
+                    unit=self.units["distance"],
+                )
+            
 
     @cached_property
     def speed_avg(self):
-        return (self.distance / self.duration_moving.total_seconds())
+        #return self.distance / self.duration_moving.total_seconds()
+        return Quantity(
+            value=(self.distance_total.value / self.duration_moving.value.total_seconds()),
+            unit=f"{self.units["distance"]}/s",
+            )
     
     ## Cadence Metrics ##
     @cached_property
-    def active_cadence_values(self):
+    def _active_cadence_values(self):
         return [
             record.get("cadence", -1)
             for record in self.moving_records()
@@ -162,12 +185,15 @@ class Ride:
     @cached_property
     def active_cadence_avg(self):
         # Collects all cadences greater than zero
-        values = self.active_cadence_values
+        values = self._active_cadence_values
 
         if not values:
             return 0
 
-        return sum(values) / len(values)
+        return Quantity(
+            value=sum(values) / len(values),
+            unit=self.units["cadence"],
+        )
 
     @cached_property
     def active_cadence_std(self):
@@ -175,23 +201,31 @@ class Ride:
         Standard deviation of active cadence.
         """
 
-        values = self.active_cadence_values
+        values = self._active_cadence_values
 
         if len(values) < 2:
             return 0.0
 
-        return statistics.stdev(values)
+        return Quantity(
+            value=statistics.stdev(values),
+            unit=self.units["cadence"],
+        )
+    
     
     ## Heart Rate Metrics ##
     @cached_property
     def heart_rate_max(self):
-        return max(
+        max_hr = max(
                 (
                     record.get("heart_rate", config.MISSING_DATA_VALUE)
                     for record in self.records
                 ),
                 default=None,
             )
+        return Quantity(
+            value=max_hr,
+            unit=self.units["heart_rate"],
+        )
     
     @cached_property
     def heart_rate_avg(self):
@@ -200,8 +234,24 @@ class Ride:
             for record in self.records
             if record.get("heart_rate", config.MISSING_DATA_VALUE) > 0
         ]
-        return sum(heart_rates) / len(heart_rates)
+        return Quantity(
+            value=sum(heart_rates) / len(heart_rates),
+            unit=self.units["heart_rate"],
+        )
 
+    @cached_property
+    def temp_avg(self):
+        temps = [
+            record["temperature"]
+            for record in self.records
+            if record.get("temperature", config.MISSING_DATA_VALUE) > 0
+        ]
+        return Quantity(
+            value=sum(temps) / len(temps),
+            unit=self.units["temperature"],
+        )
+
+    ## Coverage Metrics ##
     @cached_property
     def heart_rate_coverage(self):
         moving = self.moving_records()
@@ -213,7 +263,10 @@ class Ride:
             for record in moving
             if record.get("heart_rate", config.MISSING_DATA_VALUE) > 0
         ]
-        return len(valid) / len(moving)
+        return Quantity(
+            value=len(valid) / len(moving),
+            unit="ratio",
+        )
 
     @cached_property
     def cadence_coverage(self):
@@ -226,7 +279,10 @@ class Ride:
             for record in moving
             if record.get("cadence", 0) > 0
         ]
-        return len(valid) / len(moving)
+        return Quantity(
+            value=len(valid) / len(moving),
+            unit="ratio",
+        )
 
     def calculate_grade(self):
         """
@@ -329,22 +385,96 @@ class Ride:
 
         self.performance.toc("Grade")
 
-    def get(self, record, field, unit=None):
-        value = record.get(field)
+    def get(self, field, unit=None, record=None):
+        """
+        Get ride data. Searches:
+            1. Records
+            2. Cached Properties
+            3. Returns None if unavailable
+        """
+
+        value = None
+
+        # 1. record field
+        if field in self.records[0]:
+            #value = [record.get(field) for record in self.records]
+            value = self.get_record_value(field, unit)
+
+        #2 ride property
+        elif hasattr(type(self), field):
+            #value = getattr(self, field)
+            value = self.get_property_value(field,unit)
+
+        else:
+            raise KeyError(f"Unknown field '{field}'")
+
+
+        return value
+
+    def get_record_value(self, field, unit_to=None):
+        """
+        Collects records with field name in converted units
+        """
+
+        #value = self.records.get(field)
+        value = [record.get(field) for record in self.records]
+
+        if field not in self.units:
+            return None
+        else:
+            unit_from = self.units[field]
 
         if value is None:
             return None
 
-        if field not in self.units:
-            return value
 
-        source = self.units[field]
+        if unit_to is None:
+            unit_to = config.FIT_FIELDS[field]["display_unit"]
 
-        if unit is None:
-            unit = config.FIT_FIELDS[field]["display_unit"]
+        value_converted = unit_converter.convert(
+                        value,
+                        unit_from,
+                        unit_to,
+                    )
 
-        return unit_converter.convert(
-            value,
-            source,
-            unit,
+        return Quantity(
+            value=value_converted,
+            unit=unit_to,
         )
+    
+
+    def get_property_value(self, field, unit_to=None):
+        """
+        Collects property values with field name in converted units
+        """
+        value = getattr(self, field, None)
+
+        if isinstance(value, Quantity):
+            # if the property is a Parameter class
+            # collect units
+            if unit_to == None:
+                unit_to = config.RIDE_PROPERTIES[field]["display_unit"] # this won't work, as the FIT_FIELDS doesn't list every property name
+            unit_from = value.unit
+            # convert
+            value_converted = unit_converter.convert(
+                                    value.value,
+                                    unit_from,
+                                    unit_to,
+                                )
+
+            return Quantity(
+                value=value_converted,
+                unit = unit_to,
+            )
+        else:
+            #return None
+            raise KeyError(f"Property ({field}) does not return type Parameter")
+
+    def list_parameters(self):
+        from functools import cached_property
+
+        return [
+            name
+            for name, value in self.__class__.__dict__.items()
+            if isinstance(value, cached_property)
+        ]

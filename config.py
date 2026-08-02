@@ -44,6 +44,51 @@ FIT_FIELDS = {
     },
 }
 
+RIDE_PROPERTIES = {
+    "start_time": {
+        "display_unit": None,
+    },
+    "end_time": {
+        "display_unit": None,
+    },
+    "duration_elapsed": {
+        "display_unit": "duration",
+    },
+    "duration_moving": {
+            "display_unit": "duration",
+    },
+    "duration_stopped": {
+            "display_unit": "duration",
+    },
+    "distance_total": {
+            "display_unit": "mi",
+    },
+    "speed_avg": {
+            "display_unit": "mph",
+    },
+    "active_cadence_avg": {
+            "display_unit": "rpm",
+    },
+    "active_cadence_std": {
+            "display_unit": "rpm",
+    },
+    "heart_rate_max": {
+            "display_unit": "bpm",
+    },
+    "heart_rate_avg": {
+            "display_unit": "bpm",
+    },
+    "temp_avg": {
+            "display_unit": "F",
+    },
+    "heart_rate_coverage": {
+            "display_unit": "ratio",
+    },
+    "cadence_coverage": {
+            "display_unit": "ratio",
+    },
+}
+
 FIT_DEFAULT_DIRS = [
     "~/downloads/",
     "~/storage/downloads/",

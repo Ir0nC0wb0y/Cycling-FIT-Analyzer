@@ -7,7 +7,7 @@ def print_distribution_hr(ride):
     Build and print a time distribution historgram of heart rate
     """
 
-    if ride.heart_rate_coverage > config.THRESHOLD_COVERAGE:
+    if ride.heart_rate_coverage.value > config.THRESHOLD_COVERAGE:
         # HR Bins in Config
         hr_bins = config.HR_BINS
         hr_distribution = distribution.build_distribution(ride,"heart_rate", hr_bins)
@@ -19,9 +19,9 @@ def print_distribution_cadence(ride):
     Build and print a time distribution historgram of cadence
     """
 
-    if ride.cadence_coverage > config.THRESHOLD_COVERAGE:
+    if ride.cadence_coverage.value > config.THRESHOLD_COVERAGE:
         # Cadence Bins centered around average, using std deviation
-        cadence_bins = distribution.build_stddev_bins(ride.active_cadence_avg, ride.active_cadence_std, config.CADENCE_STDEV_BINS)
+        cadence_bins = distribution.build_stddev_bins(ride.active_cadence_avg.value, ride.active_cadence_std.value, config.CADENCE_STDEV_BINS)
         cadence_distribution = distribution.build_distribution(ride, "cadence", cadence_bins)
         distribution.print_distribution(cadence_distribution, cadence_bins, title="Cadence Consistency")
 

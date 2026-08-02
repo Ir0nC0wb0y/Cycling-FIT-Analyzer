@@ -1,7 +1,17 @@
+
+## Need to make conversions for incoming units of "time" and "duration" based on standard time objects
+
 def convert(value, from_unit, to_unit):
 
-    if from_unit == to_unit:
+    if from_unit == to_unit or value == None:
         return value
+
+    # Handle lists/collections first
+    if isinstance(value, list):
+        return [
+            convert(item, from_unit, to_unit)
+            for item in value
+        ]
 
     # Speeds
     if from_unit in ["m/s", "mph", "kph"]:
@@ -21,11 +31,19 @@ def convert(value, from_unit, to_unit):
 
     # Temperature
     if from_unit in ["C", "F"]:
-            return convert_temperature(
-                value,
-                from_unit,
-                to_unit
-            )
+        return convert_temperature(
+            value,
+            from_unit,
+            to_unit
+        )
+
+    # Time
+    if from_unit in ["duration", "s", "min", "hr"]:
+        return convert_time(
+            value,
+            from_unit,
+            to_unit
+        )
 
     raise ValueError(
         f"No conversion available: {from_unit} -> {to_unit}"
@@ -109,3 +127,20 @@ def convert_temperature(value, from_unit, to_unit):
     raise ValueError(
                 f"Unsupported temperature conversion: {from_unit} -> {to_unit}"
             )
+
+def convert_time(value, from_unit, to_unit):
+    """
+    Convert duration between supported units.
+    """
+
+    if from_unit == to_unit:
+        return value
+
+    if from_unit == "duration" and to_unit == "s":
+        return value.total_seconds()
+
+    if from_unit == "duration" and to_unit == "min":
+        return value.total_seconds() / 60
+
+    if from_unit == "duration" and to_unit == "hr":
+        return value.total_seconds() / 3600

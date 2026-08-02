@@ -8,8 +8,8 @@ import src.reports.distribution_report as distribution_report
 import src.analysis.distribution as distribution
 from src.analysis import speed_analysis
 #from src.reports import speed_profile
-from src.analysis import effort_analysis
-import src.performance_logger as performance_logger
+#from src.analysis import effort_analysis
+#import src.performance_logger as performance_logger
 
 import config
 from src import units
@@ -39,7 +39,12 @@ def main():
     # Create a ride & validate
     ride = Ride(records, field_units)
     ride.validate()
+    print(ride.units)
+    print(ride.list_parameters())
     
+
+    #ride.get("distance")
+    #print(ride.get("temp_avg"))
 
     # Run reports
     coach_report.print_coach_report(ride)
@@ -58,7 +63,7 @@ def main():
     #effort_profile = effort_analysis.build_effort_profile(ride)
     #effort_analysis.print_effort_profile(effort_profile)
 
-    ride.performance.report()
+    #ride.performance.report()
 
     print()
     print("Program End")
@@ -66,3 +71,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
