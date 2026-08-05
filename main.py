@@ -39,8 +39,8 @@ def main():
     # Create a ride & validate
     ride = Ride(records, field_units)
     ride.validate()
-    print(ride.units)
-    print(ride.list_parameters())
+    #print(ride.units)
+    #print(ride.list_parameters())
     
 
     #ride.get("distance")
