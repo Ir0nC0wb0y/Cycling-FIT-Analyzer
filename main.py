@@ -42,6 +42,10 @@ def main():
     #print(ride.units)
     #print(ride.list_parameters())
 
+    #ride.get("distance")
+    #print(ride.get("temp_avg"))
+
+
     # Run reports
     coach_report.print_coach_report(ride)
 
