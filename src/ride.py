@@ -12,6 +12,7 @@ class Ride:
     def __init__(self, records, field_units):
         self.records = records
         self.units = field_units
+        print(self.records[0].keys())
         self.performance = PerformanceLogger()
         self.calculate_grade()
         self.calculate_acceleration()
