@@ -45,6 +45,13 @@ def convert(value, from_unit, to_unit):
             to_unit
         )
 
+    if from_unit in ["lb", "kg", "g"]:
+        return convert_mass(
+            value,
+            from_unit,
+            to_unit
+        )
+
     raise ValueError(
         f"No conversion available: {from_unit} -> {to_unit}"
     )
@@ -144,3 +151,30 @@ def convert_time(value, from_unit, to_unit):
 
     if from_unit == "duration" and to_unit == "hr":
         return value.total_seconds() / 3600
+
+def convert_mass(value, from_unit, to_unit):
+    """
+    Convert mass between supported units.
+    """
+
+    if from_unit == "kg" and to_unit == "lb":
+        return value * 2.20462
+
+    if from_unit == "lb" and to_unit == "kg":
+        return value / 2.20462
+
+    if from_unit == "kg" and to_unit == "g":
+        return value * 1000
+
+    if from_unit == "g" and to_unit == "kg":
+        return value / 1000
+
+    if from_unit == "lb" and to_unit == "g":
+        return value * 453.592
+
+    if from_unit == "g" and to_unit == "lb":
+        return value / 453.592
+
+    raise ValueError(
+            f"Unsupported temperature conversion: {from_unit} -> {to_unit}"
+        )

@@ -1,5 +1,7 @@
 from pathlib import Path
 from datetime import timedelta
+from src.power_enums import (SurfaceType, TireType, AeroPosition, DrivetrainLosses,)
+from src.quantity import Quantity
 
 MISSING_DATA_VALUE = -1
 
@@ -130,6 +132,7 @@ THRESHOLD_MOVING_SPEED = 0.5
 THRESHOLD_INACTIVE_CADENCE = 50
 THRESHOLD_COVERAGE = .80
 GRADE_WINDOW_DISTANCE = 50  # meters
+ACCELERATION_WINDOW = 15.0  # seconds
 
 TIME_VALIDATION = timedelta(seconds=5)
 AUTO_PAUSE_GAP_SECONDS = timedelta(seconds=2)
@@ -163,3 +166,33 @@ REPORT_BAR_WIDTH = 20
 REPORT_BAR_CHARACTER = "#"
 REPORT_SHOW_EMPTY_BINS = False
 REPORT_MIN_BIN_PERCENT = .005
+
+####################################################################
+####################          POWER          #######################
+####################################################################
+RIDER_MASS = Quantity(170.0, "lb")
+BIKE_MASS = Quantity(25.0, "lb")
+
+SURFACE_TYPE = SurfaceType.CONCRETE
+    # Possible values:
+        # Concrete
+        # Asphalt
+        # Gravel
+        # Grass
+        # Off-Road
+        # Sand
+TIRE_TYPE = TireType.SLICK
+    # Possible Values:
+        # Slick
+        # Knobby
+AERO_POSITION = AeroPosition.TOPS
+    # Possible Values:
+        # Tops
+        # Hoods
+        # Drops
+        # Aerobars
+DRIVETRAIN_LOSSES = DrivetrainLosses.NEW
+    # Possible Values:
+        # new
+        # old
+        # worn

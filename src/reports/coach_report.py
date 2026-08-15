@@ -19,7 +19,7 @@ def print_coach_report(ride):
     #speed_avg_display = ride.display_value("speed", ride.speed_avg.value)
 
     print()
-    print("Coach Report v2.1")
+    print("Coach Report v2.2")
 
     print(
         f"{'Moving Time':<{label_width}}"
@@ -42,6 +42,11 @@ def print_coach_report(ride):
     )
 
     print(
+        f"{'Average Estimated Power':<{label_width}}"
+        f"{ride.get("power_avg"):.0fu}"
+    )
+
+    print(
         f"{'Avg Active Cadence':<{label_width}}"
         f"{ride.get("active_cadence_avg"):.1fu}"
     )
@@ -58,5 +63,5 @@ def print_coach_report(ride):
 
     print(
         f"{'Avg Temperature':<{label_width}}"
-        f"{ride.get("temp_avg"):.1fu}"
+        f"{ride.get("temp_avg",unit="F"):.1fu}"
     )

@@ -59,7 +59,21 @@ def main():
     #effort_profile = effort_analysis.build_effort_profile(ride)
     #effort_analysis.print_effort_profile(effort_profile)
 
-    #ride.performance.report()
+    ride.performance.report()
+
+    print()
+    for record in ride.records[100:110]:
+        print(
+            f"speed={record.get('speed'):.2f} "
+            f"grade={record.get('grade'):.2f}% "
+            f"accel={record.get('acceleration'):.3f} "
+            f"rho={record.get('air_density'):.3f} "
+            f"gravity={record.get('power_gravity'):.1f} W "
+            f"rolling={record.get('power_rolling'):.1f} W "
+            f"aero={record.get('power_aero'):.1f} W "
+            f"accel_power={record.get('power_acceleration'):.1f} W "
+            f"total={record.get('estimated_power'):.1f} W"
+        )
 
     print()
     print("Program End")

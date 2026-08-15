@@ -5,6 +5,7 @@ import statistics
 from src import units as unit_converter
 from src.performance_logger import PerformanceLogger
 from src.quantity import Quantity
+import src.power_calc as power_calc
 
 class Ride:
 
@@ -13,6 +14,8 @@ class Ride:
         self.units = field_units
         self.performance = PerformanceLogger()
         self.calculate_grade()
+        self.calculate_acceleration()
+        self.calculate_power()
         
 
     def get_unit(self, field):
@@ -249,6 +252,55 @@ class Ride:
             unit=self.units["temperature"],
         )
 
+    @property
+    def power_avg(self):
+        """
+        Calculate time-weighted average estimated power
+        over moving time.
+        """
+
+        power = self.get("estimated_power", "W").value
+
+        power_time = 0.0
+        total_time = 0.0
+
+        for current, next_record, current_power in zip(
+            self.records,
+            self.records[1:],
+            power,
+        ):
+
+            if current_power is None:
+                continue
+
+            dt = (
+                next_record["time"]
+                - current["time"]
+            ).total_seconds()
+
+            if dt <= 0:
+                continue
+
+            # Exclude stopped records from average power.
+            speed = current.get("speed")
+
+            if speed is None or speed <= 0:
+                continue
+
+            power_time += current_power * dt
+            total_time += dt
+
+        if total_time <= 0:
+            return Quantity(
+                value=None,
+                unit="W",
+            )
+
+        return Quantity(
+            value=power_time / total_time,
+            unit="W",
+        )
+
     ## Coverage Metrics ##
     @cached_property
     def heart_rate_coverage(self):
@@ -292,6 +344,8 @@ class Ride:
         """
 
         self.performance.tic("Grade")
+
+        self.units["grade"] = "%"
 
         half_window = config.GRADE_WINDOW_DISTANCE / 2
 
@@ -383,6 +437,202 @@ class Ride:
 
         self.performance.toc("Grade")
 
+    def calculate_acceleration(self):
+        """
+        Calculate acceleration using a centered linear regression.
+
+        Acceleration is estimated by fitting a straight line to
+        the speed profile over a time window centered on the
+        current record.
+
+        Acceleration = change in speed / change in time
+        """
+
+        self.performance.tic("Acceleration")
+
+        self.units["acceleration"] = "m/s^2"
+
+        half_window = config.ACCELERATION_WINDOW / 2
+
+        # Sliding window implementation.
+        #
+        # 'left' and 'right' only move forward through the ride.
+        # This avoids searching the entire record list for every
+        # center point, reducing complexity from O(n²) to O(n).
+
+        left = 0
+        right = 0
+
+        for center in range(len(self.records)):
+
+            current = self.records[center]
+
+            center_time = current.get("time")
+
+            if center_time is None:
+                current["acceleration"] = None
+                continue
+
+            start_time = (
+                center_time
+                - timedelta(seconds=half_window)
+            )
+
+            end_time = (
+                center_time
+                + timedelta(seconds=half_window)
+            )
+
+            #
+            # Advance the left edge of the window
+            #
+            while (
+                left < center
+                and self.records[left]["time"] < start_time
+            ):
+                left += 1
+
+            #
+            # Advance the right edge of the window
+            #
+            while (
+                right + 1 < len(self.records)
+                and self.records[right + 1]["time"] <= end_time
+            ):
+                right += 1
+
+            #
+            # Build regression arrays
+            #
+            x = []
+            y = []
+
+            for i in range(left, right + 1):
+
+                record = self.records[i]
+
+                speed = record.get("speed")
+                time = record.get("time")
+
+                if (
+                    speed is None
+                    or time is None
+                ):
+                    continue
+
+                x.append(
+                    (time - center_time).total_seconds()
+                )
+
+                y.append(speed)
+
+            # Need at least 3 points to perform a regression
+            if len(x) < 3:
+                current["acceleration"] = None
+                continue
+
+            x_mean = sum(x) / len(x)
+            y_mean = sum(y) / len(y)
+
+            numerator = 0.0
+            denominator = 0.0
+
+            for xi, yi in zip(x, y):
+
+                dx = xi - x_mean
+
+                numerator += (
+                    dx * (yi - y_mean)
+                )
+
+                denominator += (
+                    dx * dx
+                )
+
+            if denominator == 0:
+                current["acceleration"] = None
+                continue
+
+            # Slope = change in speed / change in time
+            current["acceleration"] = (
+                numerator / denominator
+            )
+
+        self.performance.toc("Acceleration")
+
+    def calculate_power(self):
+        """
+        Calculate estimated power for each record.
+        """
+
+        self.performance.tic("Power")
+
+        rider_mass = unit_converter.convert(
+            config.RIDER_MASS.value,
+            config.RIDER_MASS.unit,
+            "kg",
+        )
+
+        bike_mass = unit_converter.convert(
+            config.BIKE_MASS.value,
+            config.BIKE_MASS.unit,
+            "kg",
+        )
+
+        mass = rider_mass + bike_mass
+
+        speeds = self.get("speed", "m/s").value
+        grades = self.get("grade", "%").value
+        accelerations = self.get("acceleration", "m/s^2").value
+        temperatures = self.get("temperature", "C").value
+        altitudes = self.get("altitude", "m").value
+
+        for current, speed, grade, acceleration, temperature, altitude in zip(
+            self.records,
+            speeds,
+            grades,
+            accelerations,
+            temperatures,
+            altitudes,
+        ):
+
+            if (
+                speed is None
+                or grade is None
+                or acceleration is None
+                or temperature is None
+                or altitude is None
+            ):
+                current["estimated_power"] = None
+                continue
+
+            # Convert grade from percent to decimal.
+            grade /= 100
+
+            result = power_calc.calculate_power(
+                mass=mass,
+                speed=speed,
+                grade=grade,
+                acceleration=acceleration,
+                temperature=temperature,
+                altitude=altitude,
+                surface_type=config.SURFACE_TYPE,
+                tire_type=config.TIRE_TYPE,
+                aero_position=config.AERO_POSITION,
+            )
+
+            current.update(result)
+
+        self.units["air_density"] = "kg/m^3"
+        self.units["power_gravity"] = "W"
+        self.units["power_rolling"] = "W"
+        self.units["power_aero"] = "W"
+        self.units["power_acceleration"] = "W"
+        self.units["estimated_power"] = "W"
+
+        self.performance.toc("Power")
+
+
     def get(self, field, unit=None, record=None):
         """
         Get ride data. Searches:
@@ -451,7 +701,8 @@ class Ride:
             # if the property is a Parameter class
             # collect units
             if unit_to == None:
-                unit_to = config.RIDE_PROPERTIES[field]["display_unit"] # this won't work, as the FIT_FIELDS doesn't list every property name
+                #unit_to = config.RIDE_PROPERTIES[field]["display_unit"] # this won't work, as the FIT_FIELDS doesn't list every property name
+                unit_to = value.unit
             unit_from = value.unit
             # convert
             value_converted = unit_converter.convert(
@@ -466,7 +717,7 @@ class Ride:
             )
         else:
             #return None
-            raise KeyError(f"Property ({field}) does not return type Parameter")
+            raise KeyError(f"Property ({field}) does not return type Quantity")
 
     def list_parameters(self):
         from functools import cached_property
