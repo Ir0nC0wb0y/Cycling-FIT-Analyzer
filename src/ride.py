@@ -12,7 +12,6 @@ class Ride:
     def __init__(self, records, field_units):
         self.records = records
         self.units = field_units
-        print(self.records[0].keys())
         self.performance = PerformanceLogger()
         self.calculate_grade()
         self.calculate_acceleration()
@@ -253,14 +252,36 @@ class Ride:
             unit=self.units["temperature"],
         )
 
-    @property
+    @cached_property
+    def power_gravity_avg(self):
+        return self._power_average("power_gravity")
+
+
+    @cached_property
+    def power_rolling_avg(self):
+        return self._power_average("power_rolling")
+
+
+    @cached_property
+    def power_aero_avg(self):
+        return self._power_average("power_aero")
+
+
+    @cached_property
+    def power_acceleration_avg(self):
+        return self._power_average("power_acceleration")
+
+
+    @cached_property
     def power_avg(self):
+        return self._power_average("estimated_power")
+
+    def _power_average(self, field):
         """
-        Calculate time-weighted average estimated power
-        over moving time.
+        Calculate time-weighted average power over moving time.
         """
 
-        power = self.get("estimated_power", "W").value
+        power = self.get(field, "W").value
 
         power_time = 0.0
         total_time = 0.0
@@ -282,7 +303,6 @@ class Ride:
             if dt <= 0:
                 continue
 
-            # Exclude stopped records from average power.
             speed = current.get("speed")
 
             if speed is None or speed <= 0:
@@ -301,6 +321,56 @@ class Ride:
             value=power_time / total_time,
             unit="W",
         )
+
+
+#    @property
+#    def power_avg(self):
+#        """
+#        Calculate time-weighted average estimated power
+#        over moving time.
+#        """
+#
+#        power = self.get("estimated_power", "W").value
+#
+#        power_time = 0.0
+#        total_time = 0.0
+#
+#        for current, next_record, current_power in zip(
+#            self.records,
+#            self.records[1:],
+#            power,
+#        ):
+#
+#            if current_power is None:
+#                continue
+#
+#            dt = (
+#                next_record["time"]
+#                - current["time"]
+#            ).total_seconds()
+#
+#            if dt <= 0:
+#                continue
+#
+#            # Exclude stopped records from average power.
+#            speed = current.get("speed")
+#
+#            if speed is None or speed <= 0:
+#                continue
+#
+#            power_time += current_power * dt
+#            total_time += dt
+#
+#        if total_time <= 0:
+#            return Quantity(
+#                value=None,
+#                unit="W",
+#            )
+#
+#        return Quantity(
+#            value=power_time / total_time,
+#            unit="W",
+#        )
 
     ## Coverage Metrics ##
     @cached_property
@@ -634,6 +704,7 @@ class Ride:
         self.performance.toc("Power")
 
 
+
     def get(self, field, unit=None, record=None):
         """
         Get ride data. Searches:
@@ -645,7 +716,7 @@ class Ride:
         value = None
 
         # 1. record field
-        if field in self.records[0]:
+        if field in self.units:
             #value = [record.get(field) for record in self.records]
             value = self.get_record_value(field, unit)
 

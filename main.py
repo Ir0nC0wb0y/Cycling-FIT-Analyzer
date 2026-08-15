@@ -7,6 +7,7 @@ from src.file_utils import find_input_file
 import src.reports.distribution_report as distribution_report
 import src.analysis.distribution as distribution
 from src.analysis import speed_analysis
+from src.reports.power_report import print_power_report
 #from src.reports import speed_profile
 #from src.analysis import effort_analysis
 #import src.performance_logger as performance_logger
@@ -34,7 +35,15 @@ def main():
 
     # Load the FIT file
     filename = find_input_file(args.filename)
+
+    #fields = get_available_fields(filename, display=True)
+
     records, field_units = load_fit(filename)
+
+    #print()
+    #print("FIT Record ouptut: ")
+    #print(records[50].keys())
+    #print()
 
     # Create a ride & validate
     ride = Ride(records, field_units)
@@ -52,6 +61,7 @@ def main():
     distribution_report.print_distribution_hr(ride)
     distribution_report.print_distribution_cadence(ride)
     #distribution_report.print_distribution_speed(ride)
+    distribution_report.print_distribution_power(ride)
 
     #profile = speed_profile.build_speed_profile(ride)
     #speed_profile.print_speed_profile(profile)
@@ -65,19 +75,7 @@ def main():
 
     ride.performance.report()
 
-    print()
-    for record in ride.records[100:110]:
-        print(
-            f"speed={record.get('speed'):.2f} "
-            f"grade={record.get('grade'):.2f}% "
-            f"accel={record.get('acceleration'):.3f} "
-            f"rho={record.get('air_density'):.3f} "
-            f"gravity={record.get('power_gravity'):.1f} W "
-            f"rolling={record.get('power_rolling'):.1f} W "
-            f"aero={record.get('power_aero'):.1f} W "
-            f"accel_power={record.get('power_acceleration'):.1f} W "
-            f"total={record.get('estimated_power'):.1f} W"
-        )
+    print_power_report(ride)
 
     print()
     print("Program End")

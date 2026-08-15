@@ -1,5 +1,6 @@
 import config
 import src.analysis.distribution as distribution
+import src.analysis.power_analysis as power_profile
 
 
 def print_distribution_hr(ride):
@@ -33,3 +34,23 @@ def print_distribution_speed(ride):
     speed_bins = distribution.generate_bins(ride, "speed", 1)
     speed_distribution = distribution.build_distribution(ride, "speed", speed_bins, moving_only=True)
     distribution.print_distribution(speed_distribution, speed_bins, "Speed Distribution", show_bounds=False)
+
+def print_distribution_power(ride):
+    """
+    Build and print a time distribution histogram of estimated power.
+    """
+
+    # 
+
+    # Aggregate Power Estimate
+    #power_bins = distribution.generate_bins(ride, "estimated_power", 25, display_unit="W", include_negative=True)
+    #power_distribution = distribution.build_distribution(ride, "estimated_power", power_bins, moving_only=True, display_unit="W")
+    #distribution.print_distribution(power_distribution, power_bins, title="Power Distribution")
+
+    """
+    Build and print a time-weighted power analysis.
+    """
+
+    power_bins = distribution.generate_bins(ride, "estimated_power", 25, display_unit="W", include_negative=True)
+    profile = power_profile.build_power_profile( ride, power_bins)
+    power_profile.print_power_profile(profile, power_bins)

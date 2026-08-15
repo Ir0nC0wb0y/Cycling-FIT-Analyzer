@@ -4,7 +4,7 @@ import config
 import src.units as unit_converter
 
 
-def generate_bins(ride, field, width):
+def generate_bins(ride, field, width, display_unit=None, include_negative=False):
     """
     Generate numeric bins from the data range.
     """
@@ -12,17 +12,22 @@ def generate_bins(ride, field, width):
     #print(f"converting {field} from {ride.units[field]} to {config.FIT_FIELDS[field]["display_unit"]}")
     values = []
 
+    if display_unit is None:
+        display_unit = config.FIT_FIELDS[field]["display_unit"]
+
     for record in ride.records:
 
         value = record.get(field)
 
-        if value is None or value < 0:
+        if value is None:
+            continue
+        if not include_negative and value < 0:
             continue
 
         value = unit_converter.convert(
             value,
             ride.units[field],
-            config.FIT_FIELDS[field]["display_unit"]
+            display_unit
         )
 
         values.append(value)
@@ -88,7 +93,7 @@ def build_stddev_bins(mean, stddev, bin_config):
 
     return bins
 
-def build_distribution(ride, field, bins, moving_only=True):
+def build_distribution(ride, field, bins, moving_only=True, display_unit=None):
     """
     Build a time-weighted distribution for a field.
 
@@ -107,6 +112,9 @@ def build_distribution(ride, field, bins, moving_only=True):
         bin["label"]: timedelta()
         for bin in bins
     }
+
+    if display_unit is None:
+        display_unit = config.FIT_FIELDS[field]["display_unit"]
 
     for current, next_record in zip(ride.records, ride.records[1:]):
 
@@ -127,7 +135,7 @@ def build_distribution(ride, field, bins, moving_only=True):
         value = unit_converter.convert(
             value,
             ride.units[field],
-            config.FIT_FIELDS[field]["display_unit"]
+            display_unit
         )
 
         dt = (
