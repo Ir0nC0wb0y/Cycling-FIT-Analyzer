@@ -1,7 +1,7 @@
 from pathlib import Path
 from datetime import timedelta
 from src.power_enums import (SurfaceType, TireType, AeroPosition, DrivetrainLosses,)
-from src.quantity import Quantity
+from src.types.quantity import Quantity
 
 MISSING_DATA_VALUE = -1
 
@@ -43,6 +43,14 @@ FIT_FIELDS = {
     "temperature": {
         "fit_field": "temperature",
         "display_unit": "F",
+    },
+    "latitude": {
+        "fit_field": "position_lat",
+        "display_unit": "deg",
+    },
+    "longitude": {
+        "fit_field": "position_long",
+        "display_unit": "deg",
     },
 }
 
@@ -133,6 +141,7 @@ THRESHOLD_INACTIVE_CADENCE = 50
 THRESHOLD_COVERAGE = .80
 GRADE_WINDOW_DISTANCE = 50  # meters
 ACCELERATION_WINDOW = 15.0  # seconds
+DIRECTION_WINDOW_DISTANCE = 20  # meters
 
 TIME_VALIDATION = timedelta(seconds=5)
 AUTO_PAUSE_GAP_SECONDS = timedelta(seconds=2)

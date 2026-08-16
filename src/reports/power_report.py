@@ -24,7 +24,7 @@ def print_power_report(ride):
     )
 
     print(
-        f"{'Gravity Average':<{label_width}}"
+        f"{'Average Gravity Power':<{label_width}}"
         f"{ride.get("power_gravity_avg"):.1fu}"
     )
 

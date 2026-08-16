@@ -69,8 +69,8 @@ def power_gravity(mass, speed, grade):
 def power_rolling(mass, speed, crr):
     return mass * GRAVITY * crr * speed
 
-def power_aero(speed, cd_a, density):
-    return 0.5 * density * cd_a * speed ** 3
+def power_aero(air_speed, cd_a, density):
+    return 0.5 * density * cd_a * air_speed ** 3
 
 def power_accel(mass, speed, acceleration):
     return mass * acceleration * speed

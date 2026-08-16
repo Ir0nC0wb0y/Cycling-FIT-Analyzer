@@ -4,8 +4,9 @@ from functools import cached_property
 import statistics
 from src import units as unit_converter
 from src.performance_logger import PerformanceLogger
-from src.quantity import Quantity
+from src.types.quantity import Quantity
 import src.power_calc as power_calc
+import math
 
 class Ride:
 
@@ -15,6 +16,7 @@ class Ride:
         self.performance = PerformanceLogger()
         self.calculate_grade()
         self.calculate_acceleration()
+        self.calculate_direction()
         self.calculate_power()
         
 
@@ -630,6 +632,242 @@ class Ride:
             )
 
         self.performance.toc("Acceleration")
+
+    def calculate_direction(self):
+        """
+        Calculate travel direction from GPS position.
+
+        Direction is expressed as compass heading:
+            0°   = North
+            90°  = East
+            180° = South
+            270° = West
+
+        A centered distance window is used to reduce GPS noise.
+        A linear regression is performed on the local X/Y position
+        as a function of ride distance.
+        """
+
+        self.performance.tic("Direction")
+
+        self.units["direction"] = "deg"
+
+        half_window = (
+            config.DIRECTION_WINDOW_DISTANCE / 2
+        )
+
+        # FIT position values are expressed in semicircles.
+        semicircles_to_radians = (
+            math.pi / (2 ** 31)
+        )
+
+        earth_radius = 6371000.0
+
+        left = 0
+        right = 0
+
+        for center in range(len(self.records)):
+
+            current = self.records[center]
+
+            center_distance = current.get("distance")
+
+            if center_distance is None:
+                current["direction"] = None
+                continue
+
+            start_distance = (
+                center_distance - half_window
+            )
+
+            end_distance = (
+                center_distance + half_window
+            )
+
+            #
+            # Advance the left edge of the window
+            #
+            while (
+                left < center
+                and self.records[left]["distance"] < start_distance
+            ):
+                left += 1
+
+            #
+            # Advance the right edge of the window
+            #
+            while (
+                right + 1 < len(self.records)
+                and self.records[right + 1]["distance"] <= end_distance
+            ):
+                right += 1
+
+            #
+            # Establish a local origin using the center
+            # record. This keeps the X/Y values small and
+            # makes the regression numerically well behaved.
+            #
+            center_lat = current.get("latitude")
+            center_lon = current.get("longitude")
+
+            if (
+                center_lat is None
+                or center_lon is None
+            ):
+                current["direction"] = None
+                continue
+
+            center_lat *= semicircles_to_radians
+            center_lon *= semicircles_to_radians
+
+            cos_lat = math.cos(center_lat)
+
+            #
+            # Build regression arrays.
+            #
+            distances = []
+            x_positions = []
+            y_positions = []
+
+            for i in range(left, right + 1):
+
+                record = self.records[i]
+
+                latitude = record.get("latitude")
+                longitude = record.get("longitude")
+                distance = record.get("distance")
+
+                if (
+                    latitude is None
+                    or longitude is None
+                    or distance is None
+                ):
+                    continue
+
+                latitude *= semicircles_to_radians
+                longitude *= semicircles_to_radians
+
+                #
+                # Convert GPS position into local Cartesian
+                # coordinates relative to the center record.
+                #
+                x = (
+                    (longitude - center_lon)
+                    * cos_lat
+                    * earth_radius
+                )
+
+                y = (
+                    (latitude - center_lat)
+                    * earth_radius
+                )
+
+                distances.append(
+                    distance - center_distance
+                )
+
+                x_positions.append(x)
+                y_positions.append(y)
+
+            #
+            # Need at least 3 points for a useful regression.
+            #
+            if len(distances) < 3:
+                current["direction"] = None
+                continue
+
+            #
+            # Linear regression:
+            #
+            #     x = mx * distance + bx
+            #     y = my * distance + by
+            #
+            distance_mean = (
+                sum(distances)
+                / len(distances)
+            )
+
+            x_mean = (
+                sum(x_positions)
+                / len(x_positions)
+            )
+
+            y_mean = (
+                sum(y_positions)
+                / len(y_positions)
+            )
+
+            numerator_x = 0.0
+            numerator_y = 0.0
+            denominator = 0.0
+
+            for distance, x, y in zip(
+                distances,
+                x_positions,
+                y_positions,
+            ):
+
+                delta_distance = (
+                    distance - distance_mean
+                )
+
+                numerator_x += (
+                    delta_distance
+                    * (x - x_mean)
+                )
+
+                numerator_y += (
+                    delta_distance
+                    * (y - y_mean)
+                )
+
+                denominator += (
+                    delta_distance
+                    * delta_distance
+                )
+
+            if denominator == 0:
+                current["direction"] = None
+                continue
+
+            #
+            # These are the components of the trajectory
+            # vector per meter of ride distance.
+            #
+            dx = numerator_x / denominator
+            dy = numerator_y / denominator
+
+            #
+            # Ignore cases where there is effectively
+            # no measurable movement.
+            #
+            if (
+                abs(dx) < 1e-6
+                and abs(dy) < 1e-6
+            ):
+                current["direction"] = None
+                continue
+
+            #
+            # atan2(dx, dy) gives a compass heading:
+            #
+            #   North =   0°
+            #   East  =  90°
+            #   South = 180°
+            #   West  = 270°
+            #
+            direction = math.degrees(
+                math.atan2(dx, dy)
+            )
+
+            #
+            # Normalize to [0, 360).
+            #
+            direction %= 360
+
+            current["direction"] = direction
+
+        self.performance.toc("Direction")
 
     def calculate_power(self):
         """
