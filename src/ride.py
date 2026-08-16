@@ -772,9 +772,11 @@ class Ride:
         if isinstance(value, Quantity):
             # if the property is a Parameter class
             # collect units
-            if unit_to == None:
-                #unit_to = config.RIDE_PROPERTIES[field]["display_unit"] # this won't work, as the FIT_FIELDS doesn't list every property name
-                unit_to = value.unit
+            if unit_to is None:
+                if field in config.RIDE_PROPERTIES:
+                    unit_to = config.RIDE_PROPERTIES[field]["display_unit"]
+                else:
+                    unit_to = value.unit
             unit_from = value.unit
             # convert
             value_converted = unit_converter.convert(
