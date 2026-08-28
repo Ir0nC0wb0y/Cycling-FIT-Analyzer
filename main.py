@@ -43,10 +43,10 @@ def main():
 
     records, field_units = load_fit(filename)
 
-    print()
-    print("FIT Record ouptut: ")
-    print(records[50].keys())
-    print()
+    #print()
+    #print("FIT Record ouptut: ")
+    #print(records[50].keys())
+    #print()
 
     # Create a ride & validate
     ride = Ride(records, field_units)
@@ -54,19 +54,19 @@ def main():
     #print(ride.units)
     #print(ride.list_parameters())
 
-    print()
-    print("Direction samples")
-    print("-----------------")
-
-    for i in range(0, len(ride.records), 500):
-        record = ride.records[i]
-
-        print(
-            f"{i:5d}  "
-            f"lat={record.get('latitude')}  "
-            f"lon={record.get('longitude')}  "
-            f"direction={record.get('direction')}"
-        )
+    #print()
+    #print("Direction samples")
+    #print("-----------------")
+#
+    #for i in range(0, len(ride.records), 500):
+    #    record = ride.records[i]
+#
+    #    print(
+    #        f"{i:5d}  "
+    #        f"lat={record.get('latitude')}  "
+    #        f"lon={record.get('longitude')}  "
+    #        f"direction={record.get('direction')}"
+    #    )
 
     #ride.get("distance")
     #print(ride.get("temp_avg"))
@@ -92,22 +92,22 @@ def main():
 
     print_power_report(ride)
 
-    results = wind_power_sweep(
-        ride,
-        wind_speeds=[0, 5, 10],
-        wind_directions=[0, 90, 180, 270],
-    )
-
-    print()
-    print("Wind Power Sweep")
-    print("----------------")
-
-    for result in results:
-
-        print(
-            f"Wind: {result['wind']:<8} "
-            f"Aero: {result['aero_power']:6.1f} W"
-        )
+    #results = wind_power_sweep(
+    #    ride,
+    #    wind_speeds=[0, 5, 10],
+    #    wind_directions=[0, 90, 180, 270],
+    #)
+#
+    #print()
+    #print("Wind Power Sweep")
+    #print("----------------")
+#
+    #for result in results:
+#
+    #    print(
+    #        f"Wind: {result['wind']:<8} "
+    #        f"Aero: {result['aero_power']:6.1f} W"
+    #    )
 
     ride.performance.report()
 
