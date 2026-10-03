@@ -34,6 +34,13 @@ def main():
         help="Path to the FIT file"
     )
 
+    parser.add_argument(
+        "-c",
+        "--coach",
+        action="store_true",
+        help="Print the Coach Report only",
+    )
+
     args = parser.parse_args()
 
     # Load the FIT file
@@ -74,6 +81,8 @@ def main():
 
     # Run reports
     coach_report.print_coach_report(ride)
+    if args.coach:
+        return
 
     distribution_report.print_distribution_hr(ride)
     distribution_report.print_distribution_cadence(ride)
